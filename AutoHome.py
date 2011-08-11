@@ -14,6 +14,9 @@ import cgi
 PASSWORD = "yourpasswordhere"
 TCP_PORT = 4321
 
+WEBSITE_ROOT = "/Users/ruzz/AutoHome/Site"
+WEBSITE_PORT = 8880
+
 ZB_PORT = '/dev/tty.usbserial-A800czWn'
 ZP_SPEED = 57600
 
@@ -99,6 +102,7 @@ reactor.listenTCP(TCP_PORT, TcpSerialEchoFactory())
 class FormPage(Resource):
 
 	def render_POST(self, request):
+		#password not yet implemented in web page..
 		"""if  ('cmd' in request.args) & ('pwd' in request.args):
 			if cgi.escape(request.args["pwd"][0]) == PASSWORD:
 				dispatchZB(cgi.escape(request.args["cmd"][0]))
@@ -110,10 +114,10 @@ class FormPage(Resource):
 			return '<html><body>You submitted: %s</body></html>' % (cgi.escape(request.args["cmd"][0]),)
 		return '<html><body>Not Submitted</body></html>'
 
-root = static.File("/Users/ruzz/AutoHome/Site")
+root = static.File(WEBSITE_ROOT)
 root.putChild("form", FormPage())
 factory = Site(root)
-reactor.listenTCP(8880, factory)
+reactor.listenTCP(WEBSITE_PORT, factory)
 
 
 ################################################################################
