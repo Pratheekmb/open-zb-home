@@ -1,4 +1,3 @@
-
 #include <IRremote.h>
 
 
@@ -154,29 +153,3 @@ void sendIRCode (unsigned int* code, int code_size) {
   Serial.println("SENT IR"); 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
