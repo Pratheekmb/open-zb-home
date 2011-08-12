@@ -11,10 +11,10 @@ import cgi
 # Globals and init:
 ################################################################################
 
-import AutoHomeConf #the file with all your settings.
+from AutoHomeConf import * #the file with all your settings.
 
 TCPClients = []
-ser = serial.Serial(AutoHomeConf.ZB_PORT, AutoHomeConf.ZB_SPEED)
+ser = serial.Serial(ZB_PORT, ZB_SPEED)
 xbee = ZigBee(ser) 
 
 
@@ -48,11 +48,11 @@ def dispatchTCP(data):
 def dispatchZB(data):
 	print data
 	if data[0] == '2':
-		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_2, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=ZB["2"], dest_addr='\xFF\xFE', data=data[1:])
 	elif data[0] == '4':
-		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_4, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', data=data[1:])
 	else:
-		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_BCAST, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data[1:])
 
 
 ################################################################################
@@ -77,7 +77,7 @@ class TcpSerialEchoFactory(Factory):
     def __init__(self):
         self.clients = TCPClients
 
-reactor.listenTCP(AutoHomeConf.TCP_PORT, TcpSerialEchoFactory())
+reactor.listenTCP(TCP_PORT, TcpSerialEchoFactory())
 
 ################################################################################
 # Set up web interface. This sets up the form handling section
@@ -98,10 +98,10 @@ class FormPage(Resource):
 			return '<html><body>You submitted: %s</body></html>' % (cgi.escape(request.args["cmd"][0]),)
 		return '<html><body>Not Submitted</body></html>'
 
-root = static.File(AutoHomeConf.WEBSITE_ROOT)
+root = static.File(WEBSITE_ROOT)
 root.putChild("form", FormPage())
 factory = Site(root)
-reactor.listenTCP(AutoHomeConf.WEBSITE_PORT, factory)
+reactor.listenTCP(WEBSITE_PORT, factory)
 
 
 ################################################################################
