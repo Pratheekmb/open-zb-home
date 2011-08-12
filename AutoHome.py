@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from twisted.internet import reactor, threads
 from twisted.internet.protocol import Protocol, Factory, defer
 from twisted.web import static
