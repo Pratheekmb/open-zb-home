@@ -7,31 +7,15 @@ import serial
 from xbee import ZigBee, XBee
 import cgi
 
-
-################################################################################
-# Set up your parameters:
-################################################################################
-PASSWORD = "yourpasswordhere"
-TCP_PORT = 4321
-
-WEBSITE_ROOT = "/Users/ruzz/AutoHome/Site"
-WEBSITE_PORT = 8880
-
-ZB_PORT = '/dev/tty.usbserial-A800czWn'
-ZP_SPEED = 57600
-
-ZB_2 = '\x00\x13\xA2\x00\xNN\xNN\xNN\xNN' #replane NNs with your ZBs ADDR.
-ZB_4 = '\x00\x13\xA2\x00\xNN\xNN\xNN\xNN'
-ZB_BCAST = '\x00\x00\x00\x00\x00\x00\xFF\xFF'
-
 ################################################################################
 # Globals and init:
 ################################################################################
+
+import AutoHomeConf #the file with all your settings.
+
 TCPClients = []
-ser = serial.Serial(ZB_PORT, ZB_SPEED)
+ser = serial.Serial(AutoHomeConf.ZB_PORT, AutoHomeConf.ZB_SPEED)
 xbee = ZigBee(ser) 
-
-
 
 
 
@@ -64,11 +48,11 @@ def dispatchTCP(data):
 def dispatchZB(data):
 	print data
 	if data[0] == '2':
-		xbee.send('tx', dest_addr_long=ZB_2, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_2, dest_addr='\xFF\xFE', data=data[1:])
 	elif data[0] == '4':
-		xbee.send('tx', dest_addr_long=ZB_4, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_4, dest_addr='\xFF\xFE', data=data[1:])
 	else:
-		xbee.send('tx', dest_addr_long=ZB_BCAST, dest_addr='\xFF\xFE', data=data[1:])
+		xbee.send('tx', dest_addr_long=AutoHomeConf.ZB_BCAST, dest_addr='\xFF\xFE', data=data[1:])
 
 
 ################################################################################
@@ -93,7 +77,7 @@ class TcpSerialEchoFactory(Factory):
     def __init__(self):
         self.clients = TCPClients
 
-reactor.listenTCP(TCP_PORT, TcpSerialEchoFactory())
+reactor.listenTCP(AutoHomeConf.TCP_PORT, TcpSerialEchoFactory())
 
 ################################################################################
 # Set up web interface. This sets up the form handling section
@@ -114,10 +98,10 @@ class FormPage(Resource):
 			return '<html><body>You submitted: %s</body></html>' % (cgi.escape(request.args["cmd"][0]),)
 		return '<html><body>Not Submitted</body></html>'
 
-root = static.File(WEBSITE_ROOT)
+root = static.File(AutoHomeConf.WEBSITE_ROOT)
 root.putChild("form", FormPage())
 factory = Site(root)
-reactor.listenTCP(WEBSITE_PORT, factory)
+reactor.listenTCP(AutoHomeConf.WEBSITE_PORT, factory)
 
 
 ################################################################################
