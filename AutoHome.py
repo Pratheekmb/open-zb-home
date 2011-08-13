@@ -5,9 +5,16 @@ from twisted.internet.protocol import Protocol, Factory, defer
 from twisted.web import static
 from twisted.web.server import Site
 from twisted.web.resource import Resource
+
+from websocket import WebSocketHandler, WebSocketSite
+
 import serial
 from xbee import ZigBee, XBee
+
+from time import strftime
 import cgi
+
+
 
 ################################################################################
 # Globals and init:
@@ -16,9 +23,9 @@ import cgi
 from AutoHomeConf import * #the file with all your settings.
 
 TCPClients = []
+WebSockClients=[]
 ser = serial.Serial(ZB_PORT, ZB_SPEED)
 xbee = ZigBee(ser) 
-
 
 
 ################################################################################
@@ -30,16 +37,8 @@ def getFromXBeeThread():
 		response = xbee.wait_read_frame()
 		if response ["id"]=="rx":
 			print response["rf_data"],
-			threads.deferToThread(getFromXBeeThread).addCallback(dispatchTCP)
+			threads.deferToThread(getFromXBeeThread).addCallback(broadcastToClients)
 			return response["rf_data"]
-
-
-################################################################################
-# Send data to all TCP clients.
-################################################################################
-def dispatchTCP(data):
-	for client in TCPClients:
-		client.transport.write(data)
 
 
 ################################################################################
@@ -69,9 +68,6 @@ class TcpSerialEcho(Protocol):
 		self.factory.clients.remove(self)
 
 	def dataReceived(self, data):
-		for client in self.factory.clients:
-			if client != self:		#echo to all tcp clients except self.
-				client.transport.write(data)
 		dispatchZB(data)
 
 class TcpSerialEchoFactory(Factory):
@@ -80,6 +76,7 @@ class TcpSerialEchoFactory(Factory):
         self.clients = TCPClients
 
 reactor.listenTCP(TCP_PORT, TcpSerialEchoFactory())
+
 
 ################################################################################
 # Set up web interface. This sets up the form handling section
@@ -107,11 +104,53 @@ reactor.listenTCP(WEBSITE_PORT, factory)
 
 
 ################################################################################
+# Run our websocket server which also serves a website, so the WEBSITE_ROOT is just served anyway.
+# The prob is that WebSocketSite can't handle POST requests, so it can't be the only server.
 ################################################################################
+class WSHandler(WebSocketHandler):
+	def __init__(self, transport):
+		WebSocketHandler.__init__(self, transport)
+
+	def frameReceived(self, frame):
+		dispatchZB(frame);
+		
+	def connectionMade(self):
+		print 'Connected to client.'
+		WebSockClients.append(self)
+
+	def connectionLost(self, reason):
+		print 'Lost connection.'
+		WebSockClients.remove(self)
+
+root = static.File(WEBSITE_ROOT)
+site = WebSocketSite(root)
+site.addHandler('/ws', WSHandler)
+reactor.listenTCP(WEBSOCKET_PORT, site)
+
+
+################################################################################
+# Send data to all TCP + Websocket clients.
+################################################################################
+def broadcastToClients(data, source=None, timestamp=True):
+
+	if timestamp:
+		data = strftime("%Y-%m-%d %H:%M:%S").encode('utf8') + ": " + data
+		
+	for client in TCPClients:
+		if client != source:
+			client.transport.write(data)
+	for client in WebSockClients:
+		if client != source:
+			client.transport.write(data)
+
+
+################################################################################
+################################################################################
+
 
                    
 # Initial call for xbee listen. It will respawn itself for the next ones..
-threads.deferToThread(getFromXBeeThread).addCallback(dispatchTCP)
+threads.deferToThread(getFromXBeeThread).addCallback(broadcastToClients)
 
 # Start reactor:
 reactor.run()

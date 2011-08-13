@@ -20,7 +20,7 @@
 </style>
     
 <!-- Dependencies --> 
-<script src="../AutoHome.js" ></script>
+<!--script src="../AutoHome.js" ></script-->
 
 <script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js" ></script>
 <script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js" ></script>
@@ -93,6 +93,86 @@ function throttle(func, wait) {
 
 
 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
+<script language='javascript'>
+var using_ws = false;
+
+
+
+function checkWebSockets()
+{
+
+		if ("WebSocket" in window) {
+		
+			document.getElementById('ws_response').innerHTML = '\
+			<div id="conn_status">Not Connected</div>\
+			<h4 id="error" style="color:#ff0000"></h4>\
+			<div id="console" style="height:300px; overflow:scroll; border:1px solid black"></div> ';
+	
+			ws = new WebSocket("ws://10.0.0.100:8881/ws");
+			ws.onmessage = function(evt) {                
+			document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
+			document.getElementById('console').innerHTML;
+			}
+			
+			ws.onopen = function(evt) {
+				$('#conn_status').html('<b>Connected</b>');
+				//ws.send('Test data');
+				using_ws = true;
+			}
+			ws.onerror = function(evt) {
+				$('#conn_status').html('<b>Error</b>');
+			}
+			ws.onclose = function(evt) {
+				$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
+				using_ws = false;
+			}
+		}
+	
+		else { // no websocket support
+			$('error').innerHTML = "Your browser does not appear to support WebSockets";
+		}
+		
+}
+
+	$(document).ready(function() {
+	
+	checkWebSockets();
+
+	});
+	
+function sendCmd(str)
+{
+	if (using_ws != false) {
+		ws.send(str)
+	} else {
+		var xmlhttp;
+		if (window.XMLHttpRequest)
+		  {// code for IE7+, Firefox, Chrome, Opera, Safari
+		  xmlhttp=new XMLHttpRequest();
+		  }
+		else
+		  {// code for IE6, IE5
+		  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		  }
+		  
+		/*xmlhttp.onreadystatechange=function()
+		//  {
+		  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+			document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+			}
+		  }
+		  */
+		  
+		xmlhttp.open("POST","http://10.0.0.100:8880/form",true);
+		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		xmlhttp.send("cmd="+str);
+	}
+}
+	
+	
+</script>
 
 
 
@@ -163,9 +243,11 @@ API -->
     </form>
 
 
-
-
 </CENTER>
+
+<p id='ws_response'></p> 
+
+
 </body>
 </html>
 
