@@ -109,7 +109,7 @@ function checkWebSockets()
 			<h4 id="error" style="color:#ff0000"></h4>\
 			<div id="console" style="height:300px; overflow:scroll; border:1px solid black"></div> ';
 	
-			ws = new WebSocket("ws://10.0.0.100:8881/ws");
+			ws = new WebSocket("ws://" +  document.location.hostname + ":8881/ws");
 			ws.onmessage = function(evt) {                
 			document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
 			document.getElementById('console').innerHTML;
@@ -165,7 +165,7 @@ function sendCmd(str)
 		  }
 		  */
 		  
-		xmlhttp.open("POST","http://10.0.0.100:8880/form",true);
+		xmlhttp.open("POST","http://" +  document.location.hostname + ":8880/form",true);
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlhttp.send("cmd="+str);
 	}
