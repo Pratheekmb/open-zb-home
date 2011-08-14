@@ -14,8 +14,6 @@ from xbee import ZigBee, XBee
 from time import strftime
 import cgi
 
-
-
 ################################################################################
 # Globals and init:
 ################################################################################
@@ -27,39 +25,40 @@ WebSockClients=[]
 ser = serial.Serial(ZB_PORT, ZB_SPEED)
 xbee = ZigBee(ser) 
 
-
-################################################################################
-# Handle reading from XBEE. Since it's currently blocking, 
-# it's handled within a twisted deferToThread and respawns itself before exit
-################################################################################
-def getFromXBeeThread():
-	while True:
-		response = xbee.wait_read_frame()
-		if response ["id"]=="rx":
-			print response["rf_data"],
-			threads.deferToThread(getFromXBeeThread).addCallback(broadcastToClients)
-			return response["rf_data"]
-
-
 ################################################################################
 # Dispatch addressed commands to zigbee devices.
 # eg: data = "2[f1]" will transmit "[f1]" to specific device
 # eg: data = "[x]"   will broadcast [x]
 ################################################################################
 def dispatchZB(data):
-	print data
-	if data[0] == '2':
-		xbee.send('tx', dest_addr_long=ZB["2"], dest_addr='\xFF\xFE', data=data[1:])
-	elif data[0] == '4':
-		xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', data=data[1:])
-	else:
-		xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data[1:])
+	if len(data) > 2:
+		print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), " CMD: ", data
+		if data[0] == '2':
+			xbee.send('tx', dest_addr_long=ZB["2"], dest_addr='\xFF\xFE', data=data[1:])
+		elif data[0] == '4':
+			xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', data=data[1:])
+		else:
+			xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data[1:])
 
+################################################################################
+# Send data to all TCP + Websocket clients.
+################################################################################
+def broadcastToClients(data, source=None, timestamp=True):
+
+	if timestamp:
+		data = strftime("%Y-%m-%d %H:%M:%S").encode('utf8') + ": " + data
+		
+	for client in TCPClients:
+		if client != source:
+			client.transport.write(data)
+	for client in WebSockClients:
+		if client != source:
+			client.transport.write(data)
 
 ################################################################################
 # Handle TCP socket connections:
 ################################################################################
-class TcpSerialEcho(Protocol):
+class TcpSocket(Protocol):
 
 	def connectionMade(self):
 		self.factory.clients.append(self)
@@ -70,13 +69,12 @@ class TcpSerialEcho(Protocol):
 	def dataReceived(self, data):
 		dispatchZB(data)
 
-class TcpSerialEchoFactory(Factory):
-    protocol = TcpSerialEcho
+class TcpSocketFactory(Factory):
+    protocol = TcpSocket
     def __init__(self):
         self.clients = TCPClients
 
-reactor.listenTCP(TCP_PORT, TcpSerialEchoFactory())
-
+reactor.listenTCP(TCP_PORT, TcpSocketFactory())
 
 ################################################################################
 # Set up web interface. This sets up the form handling section
@@ -102,7 +100,6 @@ root.putChild("form", FormPage())
 factory = Site(root)
 reactor.listenTCP(WEBSITE_PORT, factory)
 
-
 ################################################################################
 # Run our websocket server which also serves a website, so the WEBSITE_ROOT is just served anyway.
 # The prob is that WebSocketSite can't handle POST requests, so it can't be the only server.
@@ -127,30 +124,33 @@ site = WebSocketSite(root)
 site.addHandler('/ws', WSHandler)
 reactor.listenTCP(WEBSOCKET_PORT, site)
 
+################################################################################
+# Handle reading from XBEE. 
+################################################################################
+from xbeeService import *
+
+class XbeeReader:
+	def decodeFloat(self, var):
+		text = ""
+		for i in range(0, len(var)):
+			text += var[i]
+		return unpack('f', text)[0]
+
+	def handle_packet(self, xbeePacketDictionary):
+		response = xbeePacketDictionary
+		print response
+		if response ["id"]=="rx":
+			broadcastToClients(response["rf_data"])
+			return response["rf_data"]
+			
+class XbeeTest(ZigBeeProtocol, XbeeReader):
+	pass
+			
+SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 ################################################################################
-# Send data to all TCP + Websocket clients.
-################################################################################
-def broadcastToClients(data, source=None, timestamp=True):
-
-	if timestamp:
-		data = strftime("%Y-%m-%d %H:%M:%S").encode('utf8') + ": " + data
-		
-	for client in TCPClients:
-		if client != source:
-			client.transport.write(data)
-	for client in WebSockClients:
-		if client != source:
-			client.transport.write(data)
-
-
-################################################################################
 ################################################################################
 
-
-                   
-# Initial call for xbee listen. It will respawn itself for the next ones..
-threads.deferToThread(getFromXBeeThread).addCallback(broadcastToClients)
 
 # Start reactor:
 reactor.run()

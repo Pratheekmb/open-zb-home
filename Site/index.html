@@ -1,253 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+	<head>
 	<title>MowHome Automation Center</title>
-	
-    <style type="text/css"> 
-		.Toggle {
-			font-size: xx-large;
-			height: 20%;
-			width: 30%;
-		}
-		.Selector {
-			font-size: 5ex;
-			height: 15%;
-			width: 30%;
-		}
-	</style>
 	<style type="text/css">
-  #container { position: relative; padding: 6px; background-color: #eeeeee; width: 420px; height:220px; }
+.Toggle {
+	font-size: xx-large;
+	height: 20%;
+	width: 30%;
+	color: #3CF;
+	background-color: #009E27;
+}
+.Selector {
+	font-size: 5ex;
+	height: 15%;
+	width: 30%;
+}
+.Section {
+	font-size: large;
+	color: #CCC;
+}
 </style>
-    
-<!-- Dependencies --> 
-<!--script src="../AutoHome.js" ></script-->
-
-<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js" ></script>
-<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js" ></script>
- 
-<!-- Color Picker source files for CSS and JavaScript -->
-<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css">
-<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js" ></script>
-    	
-<script>
-
-(function() {
-    var Event = YAHOO.util.Event, picker;
- 
-    Event.onDOMReady(function() {
-			YAHOO.log("Creating Color Picker.", "info", "example");
-            picker = new YAHOO.widget.ColorPicker("container", {
-                    showhsvcontrols: true,
-                    showhexcontrols: true,
-					images: {
-						PICKER_THUMB: "assets/picker_thumb.png",
-						HUE_THUMB: "assets/hue_thumb.png"
-    				}
-                });
-			YAHOO.log("Finished creating Color Picker.", "info", "example");
-			
-			//a listener for logging RGB color changes;
-			//this will only be visible if logger is enabled:
-			var onRgbChange = function(o) {
-				sendCmd("4[c"+picker.get("hex")+"]");
-			}
-			
-			//subscribe to the rgbChange event;
-			picker.on("rgbChange", throttle(onRgbChange,1));
-			
-			//use setValue to reset the value to white:
-			Event.on("reset", "click", function(e) {
-				picker.setValue([255, 255, 255], false); //false here means that rgbChange
-													     //wil fire; true would silence it
-			});
-			
-			//use the "get" method to get the current value
-			//of one of the Color Picker's properties; in 
-			//this case, we'll get the hex value and write it
-			//to the log:
-			Event.on("gethex", "click", function(e) {
-				sendCmd("2*"+picket.get("hex"));
-				YAHOO.log("Current hex value: " + picker.get("hex"), "info", "example"); 
-			});
-        });
-})();
-
-
-function throttle(func, wait) {
-    var timeout;
-    return function() {
-        var context = this, args = arguments;
-        if (!timeout) {
-            // the first time the event fires, we setup a timer, which 
-            // is used as a guard to block subsequent calls; once the 
-            // timer's handler fires, we reset it and create a new one
-            timeout = setTimeout(function() {
-                timeout = null;
-                func.apply(context, args);
-            }, wait);
-        }
-    }
+	<style type="text/css">
+#light_color_picker {
+	position: relative;
+	padding: 6px;
+	background-color: #eeeeee;
+	width: 420px;
+	height:220px;
 }
+</style>
 
-</script>
+	<!-- Color Picker source files for CSS and JavaScript -->
+	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js" ></script>
+	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js" ></script>
+	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css">
+	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js" ></script>
 
-
-
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
-<script language='javascript'>
-var using_ws = false;
-
-
-
-function checkWebSockets()
-{
-
-		if ("WebSocket" in window) {
+	<!-- Color Picker handling, also throttle color change requests. -->
+	<script>
+    
+		(function() {
+			var Event = YAHOO.util.Event, picker;
+		 
+			Event.onDOMReady(function() {
+					YAHOO.log("Creating Color Picker.", "info", "example");
+					picker = new YAHOO.widget.ColorPicker("light_color_picker", {
+							showhsvcontrols: true,
+							showhexcontrols: true,
+							images: {
+								PICKER_THUMB: "assets/picker_thumb.png",
+								HUE_THUMB: "assets/hue_thumb.png"
+							}
+						});
+					YAHOO.log("Finished creating Color Picker.", "info", "example");
+					
+					//a listener for logging RGB color changes;
+					//this will only be visible if logger is enabled:
+					var onRgbChange = function(o) {
+						sendCmd("4[c"+picker.get("hex")+"]");
+					}
+					
+					//subscribe to the rgbChange event;
+					picker.on("rgbChange", throttle(onRgbChange,1));
+					
+					//use setValue to reset the value to white:
+					Event.on("reset", "click", function(e) {
+						picker.setValue([255, 255, 255], false); //false here means that rgbChange
+																 //wil fire; true would silence it
+					});
+					
+					//use the "get" method to get the current value
+					//of one of the Color Picker's properties; in 
+					//this case, we'll get the hex value and write it
+					//to the log:
+					Event.on("gethex", "click", function(e) {
+						sendCmd("2*"+picket.get("hex"));
+					});
+				});
+		})();
 		
-			document.getElementById('ws_response').innerHTML = '\
-			<div id="conn_status">Not Connected</div>\
-			<h4 id="error" style="color:#ff0000"></h4>\
-			<div id="console" style="height:300px; overflow:scroll; border:1px solid black"></div> ';
-	
-			ws = new WebSocket("ws://" +  document.location.hostname + ":8881/ws");
-			ws.onmessage = function(evt) {                
-			document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
-			document.getElementById('console').innerHTML;
-			}
-			
-			ws.onopen = function(evt) {
-				$('#conn_status').html('<b>Connected</b>');
-				//ws.send('Test data');
-				using_ws = true;
-			}
-			ws.onerror = function(evt) {
-				$('#conn_status').html('<b>Error</b>');
-			}
-			ws.onclose = function(evt) {
-				$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
-				using_ws = false;
+		
+		function throttle(func, wait) {
+			var timeout;
+			return function() {
+				var context = this, args = arguments;
+				if (!timeout) {
+					// the first time the event fires, we setup a timer, which 
+					// is used as a guard to block subsequent calls; once the 
+					// timer's handler fires, we reset it and create a new one
+					timeout = setTimeout(function() {
+						timeout = null;
+						func.apply(context, args);
+					}, wait);
+				}
 			}
 		}
-	
-		else { // no websocket support
-			$('error').innerHTML = "Your browser does not appear to support WebSockets";
+    
+    </script>
+
+	<!-- Websocket and AJAX functions (communication)-->
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
+	<script language='javascript'>
+		var using_ws = false;
+		
+		function checkWebSockets()
+		{
+		
+				if ("WebSocket" in window) {
+				
+					document.getElementById('ws_response').innerHTML = '\
+					<div id="conn_status">Not Connected</div>\
+					<h4 id="error" style="color:#ff0000"></h4>\
+					<div id="console" style="height:300px; overflow:scroll; border:1px solid black"></div> ';
+			
+					ws = new WebSocket("ws://" +  document.location.hostname + ":8881/ws");
+					ws.onmessage = function(evt) {                
+					document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
+					document.getElementById('console').innerHTML;
+					}
+					
+					ws.onopen = function(evt) {
+						$('#conn_status').html('<b>Connected</b>');
+						//ws.send('Test data');
+						using_ws = true;
+					}
+					ws.onerror = function(evt) {
+						$('#conn_status').html('<b>Error</b>');
+					}
+					ws.onclose = function(evt) {
+						$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
+						using_ws = false;
+					}
+				}
+			
+				else { // no websocket support
+					$('error').innerHTML = "Your browser does not appear to support WebSockets";
+				}		
 		}
 		
-}
-
-	$(document).ready(function() {
-	
-	checkWebSockets();
-
-	});
-	
-function sendCmd(str)
-{
-	if (using_ws != false) {
-		ws.send(str)
-	} else {
-		var xmlhttp;
-		if (window.XMLHttpRequest)
-		  {// code for IE7+, Firefox, Chrome, Opera, Safari
-		  xmlhttp=new XMLHttpRequest();
-		  }
-		else
-		  {// code for IE6, IE5
-		  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-		  }
-		  
-		/*xmlhttp.onreadystatechange=function()
-		//  {
-		  if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-			document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+			$(document).ready(function() {
+			
+			checkWebSockets();
+		
+			});
+			
+		function sendCmd(str)
+		{
+			if (using_ws != false) {
+				ws.send(str)
+			} else {
+				var xmlhttp;
+				if (window.XMLHttpRequest)
+				  {// code for IE7+, Firefox, Chrome, Opera, Safari
+				  xmlhttp=new XMLHttpRequest();
+				  }
+				else
+				  {// code for IE6, IE5
+				  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+				  }
+				  
+				/*xmlhttp.onreadystatechange=function()
+				//  {
+				  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+					{
+					document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+					}
+				  }
+				  */
+				  
+				xmlhttp.open("POST","http://" +  document.location.hostname + ":8880/form",true);
+				xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+				xmlhttp.send("cmd="+str);
 			}
-		  }
-		  */
-		  
-		xmlhttp.open("POST","http://" +  document.location.hostname + ":8880/form",true);
-		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-		xmlhttp.send("cmd="+str);
-	}
-}
-	
-	
-</script>
-
-
-
-</head>
-<body bgcolor="#494949" class="yui-skin-sam">
-</body>
-<CENTER> 
-
-<div id="myDiv">
-
-
-
-<!--We'll use these to trigger interactions with the Color Picker
-<button id="reset">Reset Color to White</button>
-<button id="gethex">Write current hex value to the Logger</button> 
-API -->
-
-        
-	<form action="" id="toggle">
-		<button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle" style= "width: 30%; color: #3CF; background-color: #009E27;">ON/OFF</button>
-	</form>
-        
-    <form action="" id="timer"> 
-        <select name="timer" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
-          <option value=""selected>Set Timer(min)</option> 
-          <option value="2[t0]">Reset</option> 
-          <option value="2[t3]">3</option> 
-          <option value="2[t4]">4</option> 
-          <option value="2[t5]">5</option> 
-          <option value="2[t7]">7</option> 
-          <option value="2[t10]">10</option> 
-        </select> 
-    </form> 
-    
-    <form action="" id="fan"> 
-        <select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
-          <option value=""selected>Set Fan Speed</option> 
-          <option value="2[f1]">1</option> 
-          <option value="2[f2]">2</option> 
-          <option value="2[f3]">3</option> 
-          <option value="2[f4]">Auto</option> 
-        </select> 
-    </form> 
-
-    <br>
-    <br>
-    <hr>
-
-    <form action="" id="light_on_off">
-		<button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style= "width: 30%; color: #3CF; background-color: #009E27;">ON</button>
-		<button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style= "width: 30%; color: #3CF; background-color: #009E27;">OFF</button>
-	</form>  
-	    <form action="" id="random_fade">
-		<button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle" style= "width: 30%; color: #3CF; background-color: #009E27;">Random Color</button>
-	</form> 
-	
-	<div id="container">
-	<!--Color Picker will appear here-->
-	</div>
-  
-
-  	<hr>
-    <br>
-    <br>
+		}
+	</script>
+	</head>
+	<body bgcolor="#494949" class="yui-skin-sam">
+<center>
+      <p class="Section">Air Conditioner</p>
+      <form action="" id="ac_on_off">
+    <button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle">ON/OFF</button>
+  </form>
+      <form action="" id="ac_timer">
+    <select name="timer" size="1" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
+          <option value="" selected>Set Timer(min)</option>
+          <option value="2[t0]">Reset</option>
+          <option value="2[t3]">3</option>
+          <option value="2[t4]">4</option>
+          <option value="2[t5]">5</option>
+          <option value="2[t7]">7</option>
+          <option value="2[t10]">10</option>
+        </select>
+  </form>
+      <form action="" id="ac_fan">
+    <select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
+          <option value="" selected>Set Fan Speed</option>
+          <option value="2[f1]">1</option>
+          <option value="2[f2]">2</option>
+          <option value="2[f3]">3</option>
+          <option value="2[f4]">Auto</option>
+        </select>
+  </form>
+      <br>
+      <hr width="30%">
+      <p class="Section">Mood Lighting</p>
+      <form action="" id="light_on_off">
+    <button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style="width:18%">ON</button>
+    <button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style="width:18%">OFF</button>
+  </form>
+      <form action="" id="light_random_fade">
+    <button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle">Random Color</button>
+  </form>
+      <div id="light_color_picker"> 
+    <!--Color Picker will appear here--> 
+  </div>
+      <hr width="30%">
+      <br>
       <form action="" name="customInput">
-        <input type="text" name="msg">
-		<button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
-    </form>
-
-
-</CENTER>
-
-<p id='ws_response'></p> 
-
-
+    Custom Input:
+    <input type="text" name="msg">
+    <button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
+  </form>
+    </center>
+<p id='ws_response'></p>
 </body>
 </html>
-
