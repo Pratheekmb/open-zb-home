@@ -38,7 +38,7 @@ def dispatchZB(data):
 		elif data[0] == '4':
 			xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', data=data[1:])
 		else:
-			xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data[1:])
+			xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data)
 
 ################################################################################
 # Send data to all TCP + Websocket clients.
@@ -153,4 +153,7 @@ SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 
 # Start reactor:
+print "Web server listening on port: ", WEBSITE_PORT
+print "Websocket listening on port : ", WEBSOCKET_PORT
+print "TCP socket listening on port: ", TCP_PORT
 reactor.run()
