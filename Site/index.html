@@ -61,7 +61,7 @@
 					}
 					
 					//subscribe to the rgbChange event;
-					picker.on("rgbChange", throttle(onRgbChange,1));
+					picker.on("rgbChange", throttle(onRgbChange,5));
 					
 					//use setValue to reset the value to white:
 					Event.on("reset", "click", function(e) {

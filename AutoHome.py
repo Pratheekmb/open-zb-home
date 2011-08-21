@@ -36,7 +36,7 @@ def dispatchZB(data):
 		if data[0] == '2':
 			xbee.send('tx', dest_addr_long=ZB["2"], dest_addr='\xFF\xFE', data=data[1:])
 		elif data[0] == '4':
-			xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', data=data[1:])
+			xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', frame_id='\x00', data=data[1:])
 		else:
 			xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data)
 
