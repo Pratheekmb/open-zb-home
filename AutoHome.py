@@ -28,7 +28,7 @@ xbee = ZigBee(ser)
 ################################################################################
 # Dispatch addressed commands to zigbee devices, after making sure frame starts correctly.
 # eg: data = "2[f1]" will transmit "[f1]" to specific device
-# eg: data = "2>[f1]" will transmit "[f1]" to specific device without ack on zibee layer.
+# eg: data = "2![f1]" will transmit "[f1]" to specific device without ack on zibee layer.
 # eg: data = "[x]"   will broadcast [x]
 # note there are no acks on zibee layer during broadcast so ">[" is not valid anyway
 ################################################################################
@@ -46,7 +46,7 @@ def dispatchZB(data):
 			index=0
 		elif data[0] in ZB:			#Valid Address Specified.
 			dest_addr=ZB[data[0]]
-			if data[1:3] == '>[':	#No ack transmit to specific address.
+			if data[1:3] == '![':	#No ack transmit to specific address.
 				index=2
 				frame_id='\x00'
 			elif data[1] == '[':

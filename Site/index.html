@@ -57,7 +57,7 @@
 					//a listener for logging RGB color changes;
 					//this will only be visible if logger is enabled:
 					var onRgbChange = function(o) {
-						sendCmd("4>[c"+picker.get("hex")+"]");
+						sendCmd("4![c"+picker.get("hex")+"]");
 					}
 					
 					//subscribe to the rgbChange event;
