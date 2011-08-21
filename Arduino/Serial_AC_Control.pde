@@ -6,7 +6,6 @@ unsigned int c = 0;
 //IR sequence to toggle A/C power.
 unsigned int ac_toggle_code[] = {
   3150,3700,2000,800,1050,1800,1950,850,1050,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,1800,1950,850,1050,850,1000,850,1050,850,1050,850,1000,900,1000,850,1050,850,1000,850,1050,850,1000,1800,1950,1800,1050,850,1050,850,1950,1800,1950,850,1050,850,1050,850,1050,850,1000,850,1050,1800,1950,850,2950};
-
 unsigned int fan_01_code[] = {
   3150,2800,1050,850,1050,850,1000,1800,1950,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,850,1050,800,1050,1800,1950,850,1050,850,1050,850,1050,800,1050,850,1050,850,1000,850,1050,850,1050,1800,1950,1750,1050,900,1000,850,1950,1800,1050,850,1950,850,1050,850,1050,850,1050,850,1000,850,1050,1800,1950,850,3000};
 
@@ -35,6 +34,8 @@ unsigned long now;
 void setup()
 {
   Serial.begin(57600);
+  delay(2000);
+  Serial.println("AC IR MODULE ONLINE");
 }
 
 
@@ -69,16 +70,19 @@ void loop()
  * "o" sends ON/OFF
  * "t3" sets timer for 3 minutes
  * "f1" sets fan speed to 1.
-*/
+ */
 void parse(char* buff, int count) {
 
   switch (buff[0]) {
+  case 'p':
+    Serial.println("AC IR MODULE ONLINE");
+    break;
   case 'o':
     sendIR();
     timer_status=0; // Override timer.
     break;
   case 't':
-    Serial.print("TIMER:");
+    Serial.print("Timer set for (min):");
     Serial.println(atoi(&buff[1]), DEC);
     IRTimerSet(atoi(&buff[1])); 
     break;
@@ -93,12 +97,16 @@ void parse(char* buff, int count) {
       sendIRCode(&fan_02_code[0], sizeof(fan_02_code)/sizeof(int)); 
       break;
     case '3':
-              Serial.println("Fan set to 3"); 
+      Serial.println("Fan set to 3"); 
       sendIRCode(&fan_03_code[0], sizeof(fan_03_code)/sizeof(int)); 
       break;
     case 'A':
       Serial.println("Fan set to Auto"); 
       sendIRCode(&fan_04_code[0], sizeof(fan_04_code)/sizeof(int)); 
+      break;
+    case 'o':
+      sendIR();
+      timer_status=0; // Override timer.
       break;
     default:  
       break;
@@ -113,18 +121,18 @@ void parse(char* buff, int count) {
 void IRTimerSet (unsigned int mins) {
   timer_duration=mins;
   if (mins==0){
-    timer_status=0;
+    timer_status=false;
   } 
   else {
-    if (!timer_status)  sendIR(); //extends timer if it is already on.
-    timer_status=1;
+    if (!timer_status)  sendIR(); //If timer is off, turn AC on otherwise just extend timer.
+    timer_status=true;
     timer_start_time = millis();
   }
 }
 
 
 void IRTimerCheck (void) {
-  if (timer_status==1 && ((millis()-timer_start_time)>((unsigned long)timer_duration*1000*60))){
+  if (timer_status && ((millis()-timer_start_time)>((unsigned long)timer_duration*1000*60))){
     sendIR();
     timer_status=0; 
   }
@@ -134,9 +142,7 @@ void IRTimerCheck (void) {
 void sendIR (void) {
   //Send IR code in 3 repeat bursts to increase transfer chance.
   irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
-  delayMicroseconds(30);
   irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
-  delayMicroseconds(30);
   irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
   Serial.println("ON/OFF SENT");
 }
@@ -144,11 +150,8 @@ void sendIR (void) {
 void sendIRCode (unsigned int* code, int code_size) {
   //Send IR code in 3 repeat bursts to increase transfer chance.
   irsend.sendRaw(code,code_size, 38);
-  delayMicroseconds(30);
   irsend.sendRaw(code,code_size, 38);
-  delayMicroseconds(30);
   irsend.sendRaw(code,code_size, 38);
-
-  Serial.println("SENT IR"); 
 
 }
+
