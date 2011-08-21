@@ -57,7 +57,7 @@
 					//a listener for logging RGB color changes;
 					//this will only be visible if logger is enabled:
 					var onRgbChange = function(o) {
-						sendCmd("4[c"+picker.get("hex")+"]");
+						sendCmd("4>[c"+picker.get("hex")+"]");
 					}
 					
 					//subscribe to the rgbChange event;
@@ -115,13 +115,24 @@
 			
 					ws = new WebSocket("ws://" +  document.location.hostname + ":8881/ws");
 					ws.onmessage = function(evt) {                
-					document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
-					document.getElementById('console').innerHTML;
+						document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
+						document.getElementById('console').innerHTML;
+						
+						if (evt.data.match("AC IR MODULE ONLINE")) {
+							document.getElementById('AC_status').innerHTML=
+								'Air Conditioner <span style="color:green">ONLINE</span>'
+						}
+						
+						if (evt.data.match("RGB & TEMP MODULE ONLINE")) {
+							document.getElementById('mood_light_status').innerHTML=
+								'Mood Light <span style="color:green">ONLINE</span>'
+						}
+						
 					}
 					
 					ws.onopen = function(evt) {
 						$('#conn_status').html('<b>Connected</b>');
-						//ws.send('Test data');
+						ws.send('[p]');
 						using_ws = true;
 					}
 					ws.onerror = function(evt) {
@@ -129,6 +140,13 @@
 					}
 					ws.onclose = function(evt) {
 						$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
+
+						document.getElementById('AC_status').innerHTML=
+							'Air Conditioner'
+								
+						document.getElementById('mood_light_status').innerHTML=
+							'Mood Light'
+
 						using_ws = false;
 					}
 				}
@@ -175,12 +193,20 @@
 		}
 	</script>
 	</head>
+	
+	
+	
+	
 	<body bgcolor="#494949" class="yui-skin-sam">
 <center>
-      <p class="Section">Air Conditioner</p>
+
+
+      <p id="AC_status" class="Section">Air Conditioner</p>
+
       <form action="" id="ac_on_off">
     <button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle">ON/OFF</button>
   </form>
+
       <form action="" id="ac_timer">
     <select name="timer" size="1" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
           <option value="" selected>Set Timer(min)</option>
@@ -192,6 +218,7 @@
           <option value="2[t10]">10</option>
         </select>
   </form>
+
       <form action="" id="ac_fan">
     <select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
           <option value="" selected>Set Fan Speed</option>
@@ -201,27 +228,40 @@
           <option value="2[f4]">Auto</option>
         </select>
   </form>
+
+
       <br>
       <hr width="30%">
-      <p class="Section">Mood Lighting</p>
+
+      <p id='mood_light_status' class="Section">Mood Lighting</p>
+
       <form action="" id="light_on_off">
     <button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style="width:18%">ON</button>
     <button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style="width:18%">OFF</button>
   </form>
+
       <form action="" id="light_random_fade">
     <button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle">Random Color</button>
   </form>
+
       <div id="light_color_picker"> 
     <!--Color Picker will appear here--> 
   </div>
+
+
       <hr width="30%">
       <br>
+
+
       <form action="" name="customInput">
     Custom Input:
     <input type="text" name="msg">
     <button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
   </form>
-    </center>
+
+</center>
+
 <p id='ws_response'></p>
+
 </body>
 </html>
