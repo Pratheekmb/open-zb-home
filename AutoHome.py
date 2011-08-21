@@ -26,19 +26,46 @@ ser = serial.Serial(ZB_PORT, ZB_SPEED)
 xbee = ZigBee(ser) 
 
 ################################################################################
-# Dispatch addressed commands to zigbee devices.
+# Dispatch addressed commands to zigbee devices, after making sure frame starts correctly.
 # eg: data = "2[f1]" will transmit "[f1]" to specific device
+# eg: data = "2>[f1]" will transmit "[f1]" to specific device without ack on zibee layer.
 # eg: data = "[x]"   will broadcast [x]
+# note there are no acks on zibee layer during broadcast so ">[" is not valid anyway
 ################################################################################
 def dispatchZB(data):
 	if len(data) > 2:
-		print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), " CMD: ", data
-		if data[0] == '2':
-			xbee.send('tx', dest_addr_long=ZB["2"], dest_addr='\xFF\xFE', data=data[1:])
-		elif data[0] == '4':
-			xbee.send('tx', dest_addr_long=ZB["4"], dest_addr='\xFF\xFE', frame_id='\x00', data=data[1:])
+
+		index=1
+		frame_id='\x01'
+		dest_addr = ZB["BC"]
+
+		print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), " CMD: ", data,
+
+		# First, make sure frame starts correctly and determin the addressing scheme to use:
+		if data[0] == '[':			#No address specified: broadcast.
+			index=0
+		elif data[0] in ZB:			#Valid Address Specified.
+			dest_addr=ZB[data[0]]
+			if data[1:3] == '>[':	#No ack transmit to specific address.
+				index=2
+				frame_id='\x00'
+			elif data[1] == '[':
+				pass
+			else:
+				print "INVALID START OF FRAME"
+				return
 		else:
-			xbee.send('tx', dest_addr_long=ZB["BC"], dest_addr='\xFF\xFE', data=data)
+			print "INVALID ADDRESS"
+			return
+			
+		# Also, make sure frame ends correctly, only then send, otherwise just return.	
+		if data[-1] == ']':
+			xbee.send('tx', dest_addr_long=dest_addr, dest_addr='\xFF\xFE', frame_id=frame_id, data=data[index:])
+			print "SENT"
+		else:
+			print "INVALID END OF FRAME"
+
+	return
 
 ################################################################################
 # Send data to all TCP + Websocket clients.
