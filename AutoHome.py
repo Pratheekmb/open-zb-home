@@ -125,7 +125,10 @@ class FormPage(Resource):
 root = static.File(WEBSITE_ROOT)
 root.putChild("form", FormPage())
 factory = Site(root)
-reactor.listenTCP(WEBSITE_PORT, factory)
+#reactor.listenTCP(WEBSITE_PORT, factory) #If you choose not to use ssl for https. update index.html file too.
+
+from twisted.internet import ssl
+reactor.listenSSL(WEBSITE_PORT, factory, ssl.DefaultOpenSSLContextFactory(SSL_PRIVKEY, SSL_CERT,))
 
 ################################################################################
 # Run our websocket server which also serves a website, so the WEBSITE_ROOT is just served anyway.
@@ -149,7 +152,9 @@ class WSHandler(WebSocketHandler):
 root = static.File(WEBSITE_ROOT)
 site = WebSocketSite(root)
 site.addHandler('/ws', WSHandler)
-reactor.listenTCP(WEBSOCKET_PORT, site)
+#reactor.listenTCP(WEBSOCKET_PORT, site)
+reactor.listenSSL(WEBSOCKET_PORT, site, ssl.DefaultOpenSSLContextFactory(SSL_PRIVKEY, SSL_CERT,))
+
 
 ################################################################################
 # Handle reading from XBEE. 

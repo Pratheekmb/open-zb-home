@@ -20,3 +20,12 @@ ZB={
         "BC":'\x00\x00\x00\x00\x00\x00\xFF\xFF'
 }
 
+############################
+# To create key and certificate:
+# openssl genrsa > privkey.pem
+# Then:
+# openssl req -new -x509 -key privkey.pem -out cacert.pem -days 1000
+# feel free to comment these out if you dont want to use ssl, also update the main script accordingly.
+###############################
+SSL_PRIVKEY = '/Users/ruzz/open-zb-home/privkey.pem'
+SSL_CERT = '/Users/ruzz/open-zb-home/cacert.pem'
