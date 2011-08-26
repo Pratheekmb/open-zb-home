@@ -142,17 +142,24 @@ print "Web server listening on port: ", WEBSITE_PORT
 class WSHandler(WebSocketHandler):
 	def __init__(self, transport):
 		WebSocketHandler.__init__(self, transport)
+		self.authenticated = False;
 
 	def frameReceived(self, frame):
-		dispatchZB(frame);
+		if not self.authenticated:
+			if frame==WEBSITE_PASSWORD:
+				self.authenticated=True
+				WebSockClients.append(self)
+				"Authenticated"
+		else:
+			dispatchZB(frame);
 		
 	def connectionMade(self):
-		print 'Connected to client.'
-		WebSockClients.append(self)
+		print 'Connected to client..',
 
 	def connectionLost(self, reason):
 		print 'Lost connection.'
-		WebSockClients.remove(self)
+		if self.authenticated:
+			WebSockClients.remove(self)
 
 root = static.File(WEBSITE_ROOT)
 site = WebSocketSite(root)

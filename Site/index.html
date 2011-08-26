@@ -132,6 +132,7 @@
 					
 					ws.onopen = function(evt) {
 						$('#conn_status').html('<b>Connected</b>');
+						ws.send(document.password.password.value);
 						ws.send('[p]');
 						using_ws = true;
 					}
