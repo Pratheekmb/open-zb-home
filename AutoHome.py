@@ -102,6 +102,7 @@ class TcpSocketFactory(Factory):
         self.clients = TCPClients
 
 reactor.listenTCP(TCP_PORT, TcpSocketFactory())
+print "TCP socket listening on port: ", TCP_PORT
 
 ################################################################################
 # Set up web interface. This sets up the form handling section
@@ -110,25 +111,29 @@ reactor.listenTCP(TCP_PORT, TcpSocketFactory())
 class FormPage(Resource):
 
 	def render_POST(self, request):
-		#password not yet implemented in web page..
-		"""if  ('cmd' in request.args) & ('pwd' in request.args):
-			if cgi.escape(request.args["pwd"][0]) == PASSWORD:
+		if  ('pass' in request.args) & ('cmd' in request.args):
+			print cgi.escape(request.args["pass"][0])
+			print WEBSITE_PASSWORD
+			if cgi.escape(request.args["pass"][0]) == WEBSITE_PASSWORD:
+				print "Authenticated ",
 				dispatchZB(cgi.escape(request.args["cmd"][0]))
-				return '<html><body>You submitted: %s</body></html>' % (cgi.escape(request.args["cmd"][0]),)
-			return '<html><body>Wrong PWD</body></html>'
-		return '<html><body>Not Submitted</body></html>'"""
-		if  'cmd' in request.args :
-			dispatchZB(cgi.escape(request.args["cmd"][0]))
-			return '<html><body>You submitted: %s</body></html>' % (cgi.escape(request.args["cmd"][0]),)
-		return '<html><body>Not Submitted</body></html>'
+				return '<html><body>Submitted</body></html>'
+			else:
+				print "Wrong password in POST request"
+				return '<html><body>Wrong PWD</body></html>'
+		else:	
+			print "No command AND password in post request"
+			return '<html><body>Not Submitted</body></html>'
+
 
 root = static.File(WEBSITE_ROOT)
 root.putChild("form", FormPage())
 factory = Site(root)
-#reactor.listenTCP(WEBSITE_PORT, factory) #If you choose not to use ssl for https. update index.html file too.
+#reactor.listenTCP(WEBSITE_PORT, factory) #If you choose not to use ssl for https. Update index.html appropriately.
 
 from twisted.internet import ssl
 reactor.listenSSL(WEBSITE_PORT, factory, ssl.DefaultOpenSSLContextFactory(SSL_PRIVKEY, SSL_CERT,))
+print "Web server listening on port: ", WEBSITE_PORT
 
 ################################################################################
 # Run our websocket server which also serves a website, so the WEBSITE_ROOT is just served anyway.
@@ -152,9 +157,9 @@ class WSHandler(WebSocketHandler):
 root = static.File(WEBSITE_ROOT)
 site = WebSocketSite(root)
 site.addHandler('/ws', WSHandler)
-#reactor.listenTCP(WEBSOCKET_PORT, site)
+#reactor.listenTCP(WEBSOCKET_PORT, site) #If you choose not to use wss, update index.html appropriately.
 reactor.listenSSL(WEBSOCKET_PORT, site, ssl.DefaultOpenSSLContextFactory(SSL_PRIVKEY, SSL_CERT,))
-
+print "Web socket listening on port: ", WEBSOCKET_PORT
 
 ################################################################################
 # Handle reading from XBEE. 
@@ -185,7 +190,4 @@ SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 
 # Start reactor:
-print "Web server listening on port: ", WEBSITE_PORT
-print "Websocket listening on port : ", WEBSOCKET_PORT
-print "TCP socket listening on port: ", TCP_PORT
 reactor.run()

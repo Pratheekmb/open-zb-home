@@ -3,7 +3,8 @@
 ################################################################################
 TCP_PORT = 4321
 
-WEBSITE_PASSWORD = "makeupsomepassword" #not yet implemented 
+import hashlib
+WEBSITE_PASSWORD = hashlib.md5("mypass").hexdigest() 
 WEBSITE_ROOT = "/Users/ruzz/open-zb-home/Site"
 WEBSITE_PORT = 8880
 WEBSOCKET_PORT = 8881
