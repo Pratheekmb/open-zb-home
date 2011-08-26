@@ -82,8 +82,11 @@ def broadcastToClients(data, source=None, timestamp=True):
 		if client != source:
 			client.transport.write(data)
 
+""" 
 ################################################################################
 # Handle TCP socket connections:
+# currently disabled. I will first find a good use for it (Android app?)  
+# then work on it, then add ssl.
 ################################################################################
 class TcpSocket(Protocol):
 
@@ -103,7 +106,7 @@ class TcpSocketFactory(Factory):
 
 reactor.listenTCP(TCP_PORT, TcpSocketFactory())
 print "TCP socket listening on port: ", TCP_PORT
-
+"""
 ################################################################################
 # Set up web interface. This sets up the form handling section
 # and the webserver root folder.
@@ -112,8 +115,6 @@ class FormPage(Resource):
 
 	def render_POST(self, request):
 		if  ('pass' in request.args) & ('cmd' in request.args):
-			print cgi.escape(request.args["pass"][0])
-			print WEBSITE_PASSWORD
 			if cgi.escape(request.args["pass"][0]) == WEBSITE_PASSWORD:
 				print "Authenticated ",
 				dispatchZB(cgi.escape(request.args["cmd"][0]))
@@ -149,7 +150,7 @@ class WSHandler(WebSocketHandler):
 			if frame==WEBSITE_PASSWORD:
 				self.authenticated=True
 				WebSockClients.append(self)
-				"Authenticated"
+				print "Authenticated"
 		else:
 			dispatchZB(frame);
 		
