@@ -229,14 +229,11 @@
 		var password=getCookie("password");
 		if (password!=null && password!="")
 		  {
-			document.password.password.value = password  }
+			document.password.password.value = password
+			}
 		else 
 		  {
-		  password=prompt("Please enter your password:","");
-		  if (password!=null && password!="")
-			{
-			setCookie("password",password,365);
-			}
+			setPassword();
 		  }
 		}
 		
@@ -248,15 +245,6 @@
 		}
 	
 	</script>
-
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	</head>
 	
