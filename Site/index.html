@@ -5,19 +5,19 @@
 	<title>MowHome Automation Center</title>
 	
 	<!-- Page styling - CSS -->
-	<link href="../assets/style.css" rel="stylesheet" type="text/css" />
+	<link href="../assets/style.css" rel="stylesheet" type="text/css"/>
 
 	<!-- Color Picker source files for CSS and JavaScript -->
-	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js" ></script>	
-	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js" ></script>
-	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css"/>
-	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js" ></script>
+	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js"></script>	
+	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js"></script>
+	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css"></script>
+	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js"></script>
 
 	<!-- Color Picker handling, also throttle color change requests. -->
-    <script type="text/javascript" src="../assets/color_picker.js" ></script>
+    <script type="text/javascript" src="../assets/color_picker.js"></script>
 
 	<!-- Websocket and AJAX functions (communication)-->
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 	<script type="text/javascript" src="../assets/communication.js" ></script>
 
 	<!-- Cookies: Password hash cookie and panel status open/close toggle and cookies-->
@@ -34,28 +34,27 @@
 	
 </head>
 	
-<body bgcolor="#494949">
+<body>
 	
 	<input type="hidden" id="password"/>
-	<button type="button" onclick ="setPassword()">Set Passs</button>
+	<button type="button" onclick ="setPassword()">Set Pass</button>
 
 	<center>
-		<button id="air_con_button" type="button" onclick ="toggle('air_con')" class="Selection" >Air Con</button>
-		<button id="mood_light_button" type="button" onclick ="toggle('mood_light')" class="Selection" >Mood Lighting</button>
-		<button id="custom_input_button" type="button" onclick ="toggle('custom_input')" class="Selection" >Custom Input</button>
-		<button id="feedback_button" type="button" onclick ="toggle('feedback')" class="Selection" >Feedback</button>
-
+		<button id="air_con_button" type="button" onclick ="toggle('air_con')" class="panelSelector" >Air Con</button>
+		<button id="mood_light_button" type="button" onclick ="toggle('mood_light')" class="panelSelector" >Mood Lighting</button>
+		<button id="custom_input_button" type="button" onclick ="toggle('custom_input')" class="panelSelector" >Custom Input</button>
+		<button id="feedback_button" type="button" onclick ="toggle('feedback')" class="panelSelector" >Feedback</button>
 
 		<div id="air_con_panel" class="panel">
 		
-			<p id="AC_status" class="Section">Air Conditioner</p>
+			<p id="AC_status" class="sectionHeader">Air Conditioner</p>
 		
 			<form action="" id="ac_on_off">
-			<button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle" style="width:150px">ON/OFF</button>
+			<button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="toggleButton" style="width:150px">ON/OFF</button>
 		  </form>
 		
 			<form action="" id="ac_timer">
-				<select name="timer" size="1" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
+				<select name="timer" size="1" class="selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
 				  <option value="" selected>Set Timer(min)</option>
 				  <option value="2[t0]">Reset</option>
 				  <option value="2[t3]">3</option>
@@ -67,7 +66,7 @@
 			</form>
 		
 			<form action="" id="ac_fan">
-				<select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
+				<select name="fan" class="selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
 				  <option value="" selected>Set Fan Speed</option>
 				  <option value="2[f1]">1</option>
 				  <option value="2[f2]">2</option>
@@ -79,15 +78,15 @@
 		</div>
 
 		<div id="mood_light_panel" class="panel">
-			<p id='mood_light_status' class="Section">Mood Lighting</p>
+			<p id='mood_light_status' class="sectionHeader">Mood Lighting</p>
 			<table><tr><td>			
 				<form action="" id="light_on_off">
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style="width:100px">ON</button>
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style="width:100px">OFF</button>
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="toggleButton" style="width:100px">ON</button>
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="toggleButton" style="width:100px">OFF</button>
 		  		</form>
 		
 			  	<form action="" id="light_random_fade">
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle" style="width:200px">RANDOM</button>
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="toggleButton" style="width:200px">RANDOM</button>
 		  		</form>
 			</td><td>
 				<div class="yui-skin-sam">
@@ -100,7 +99,7 @@
 			
 		<div id="custom_input_panel" class="panel">
 		
-			<p class="Section">Custom Input</p>
+			<p class="sectionHeader">Custom Input</p>
 
 			<form action="" name="customInput">
 				<input type="text" name="msg"/>
