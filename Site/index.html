@@ -1,328 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
+<head>
+	
 	<title>MowHome Automation Center</title>
-	<style type="text/css">
-.Toggle {
-	font-size: xx-large;
-	height: 20%;
-	width: 30%;
-	color: #3CF;
-	background-color: #009E27;
-}
-.Selector {
-	font-size: 5ex;
-	height: 15%;
-	width: 30%;
-}
-.Section {
-	font-size: large;
-	color: #CCC;
-}
-</style>
-	<style type="text/css">
-#light_color_picker {
-	position: relative;
-	padding: 6px;
-	background-color: #eeeeee;
-	width: 420px;
-	height:220px;
-}
-</style>
+	
+	<!-- Page styling - CSS -->
+	<link href="../assets/style.css" rel="stylesheet" type="text/css" />
 
 	<!-- Color Picker source files for CSS and JavaScript -->
 	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js" ></script>	
 	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js" ></script>
-	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css">
+	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css"/>
 	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js" ></script>
 
 	<!-- Color Picker handling, also throttle color change requests. -->
-	<script>
-    
-		(function() {
-			var Event = YAHOO.util.Event, picker;
-		 
-			Event.onDOMReady(function() {
-					YAHOO.log("Creating Color Picker.", "info", "example");
-					picker = new YAHOO.widget.ColorPicker("light_color_picker", {
-							showhsvcontrols: true,
-							showhexcontrols: true,
-							images: {
-								PICKER_THUMB: "assets/picker_thumb.png",
-								HUE_THUMB: "assets/hue_thumb.png"
-							}
-						});
-					YAHOO.log("Finished creating Color Picker.", "info", "example");
-					
-					//a listener for logging RGB color changes;
-					//this will only be visible if logger is enabled:
-					var onRgbChange = function(o) {
-						sendCmd("4![c"+picker.get("hex")+"]");
-					}
-					
-					//subscribe to the rgbChange event;
-					picker.on("rgbChange", throttle(onRgbChange,20));
-					
-					//use setValue to reset the value to white:
-					Event.on("reset", "click", function(e) {
-						picker.setValue([255, 255, 255], false); //false here means that rgbChange
-																 //wil fire; true would silence it
-					});
-					
-					//use the "get" method to get the current value
-					//of one of the Color Picker's properties; in 
-					//this case, we'll get the hex value and write it
-					//to the log:
-					Event.on("gethex", "click", function(e) {
-						sendCmd("2*"+picket.get("hex"));
-					});
-				});
-		})();
-		
-		
-		function throttle(func, wait) {
-			var timeout;
-			return function() {
-				var context = this, args = arguments;
-				if (!timeout) {
-					// the first time the event fires, we setup a timer, which 
-					// is used as a guard to block subsequent calls; once the 
-					// timer's handler fires, we reset it and create a new one
-					timeout = setTimeout(function() {
-						timeout = null;
-						func.apply(context, args);
-					}, wait);
-				}
-			}
-		}
-    
-    </script>
+    <script type="text/javascript" src="../assets/color_picker.js" ></script>
 
 	<!-- Websocket and AJAX functions (communication)-->
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
-	<script language='javascript'>
-		var using_ws = false;
-		
-		function checkWebSockets()
-		{
-		
-				if ("WebSocket" in window) {
-				
-					document.getElementById('ws_response').innerHTML = '\
-					<div id="conn_status">Not Connected</div>\
-					<h4 id="error" style="color:#ff0000"></h4>\
-					<div id="console" style="height:300px; overflow:scroll; border:1px solid black"></div> ';
-			
-					ws = new WebSocket("wss://" +  document.location.hostname + ":8881/ws");
-					ws.onmessage = function(evt) {                
-						document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
-						document.getElementById('console').innerHTML;
-						
-						if (evt.data.match("AC IR MODULE ONLINE")) {
-							document.getElementById('AC_status').innerHTML=
-								'Air Conditioner <span style="color:green">ONLINE</span>'
-						}
-						
-						if (evt.data.match("RGB & TEMP MODULE ONLINE")) {
-							document.getElementById('mood_light_status').innerHTML=
-								'Mood Light <span style="color:green">ONLINE</span>'
-						}
-						
-					}
-					
-					ws.onopen = function(evt) {
-						$('#conn_status').html('<b>Connected</b>');
-						ws.send(document.password.password.value);
-						ws.send('[p]');
-						using_ws = true;
-					}
-					ws.onerror = function(evt) {
-						$('#conn_status').html('<b>Error</b>');
-					}
-					ws.onclose = function(evt) {
-						$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
+	<script type="text/javascript" src="../assets/communication.js" ></script>
 
-						document.getElementById('AC_status').innerHTML=
-							'Air Conditioner'
-								
-						document.getElementById('mood_light_status').innerHTML=
-							'Mood Light'
-
-						using_ws = false;
-					}
-				}
-			
-				else { // no websocket support
-					$('error').innerHTML = "Your browser does not appear to support WebSockets";
-				}		
-		}
-		
-			$(document).ready(function() {
-			
-			checkWebSockets();
-			checkCookie();
-		
-			});
-			
-		function sendCmd(str)
-		{
-			if (using_ws != false) {
-				ws.send(str)
-			} else {
-				var xmlhttp;
-				if (window.XMLHttpRequest)
-				  {// code for IE7+, Firefox, Chrome, Opera, Safari
-				  xmlhttp=new XMLHttpRequest();
-				  }
-				else
-				  {// code for IE6, IE5
-				  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-				  }
-				  
-				/*xmlhttp.onreadystatechange=function()
-				//  {
-				  if (xmlhttp.readyState==4 && xmlhttp.status==200)
-					{
-					document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
-					}
-				  }
-				  */
-				  
-				xmlhttp.open("POST","https://" +  document.location.hostname + ":8880/form",true);
-				xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-				xmlhttp.send("pass=" + encodeURIComponent(document.password.password.value) 
-							+"&cmd="+encodeURIComponent(str));
-			}
-		}
-	</script>
-
-	
+	<!-- Cookies: Password hash cookie and panel status open/close toggle and cookies-->
 	<script type="text/javascript" src="../assets/webtoolkit_md5.js" ></script>
+	<script type="text/javascript" src="../assets/cookie_stuff.js" ></script>
 	
 	<script type="text/javascript">
-
-	function getCookie(c_name)
-		{
-		var i,x,y,ARRcookies=document.cookie.split(";");
-		for (i=0;i<ARRcookies.length;i++)
-		  {
-		  x=ARRcookies[i].substr(0,ARRcookies[i].indexOf("="));
-		  y=ARRcookies[i].substr(ARRcookies[i].indexOf("=")+1);
-		  x=x.replace(/^\s+|\s+$/g,"");
-		  if (x==c_name)
-			{
-			return unescape(y);
-			}
-		  }
-		}
-
-	function setCookie(c_name,value,exdays)
-		{
-		var exdate=new Date();
-		exdate.setDate(exdate.getDate() + exdays);
-		var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
-		document.cookie=c_name + "=" + c_value;
-		}
-
-
-	function checkCookie()
-		{
-		var password=getCookie("password");
-		if (password!=null && password!="")
-		  {
-			document.password.password.value = password
-			}
-		else 
-		  {
-			setPassword();
-		  }
-		}
-		
-		function setPassword()
-		{
-		pass=MD5(prompt('Please enter your password:',''));
-		setCookie('password',pass,365);
-		document.password.password.value = pass;
-		}
-	
+		$(document).ready(function() {	
+			checkWebSockets();
+			checkPasswordCookie()
+			checkButtonCookies(Array("air_con", "mood_light", "custom_input", "feedback"));
+			});
 	</script>
 	
-	</head>
+</head>
 	
+<body bgcolor="#494949">
 	
-	
-	
-	<body bgcolor="#494949" class="yui-skin-sam">
-	
-      <form action="" name="password">
-    <input type="hidden" name="password">
-        <button type="button" onclick ="setPassword()"  >Set Passs</button>
-  </form>
+	<input type="hidden" id="password"/>
+	<button type="button" onclick ="setPassword()">Set Passs</button>
 
-<center>
+	<center>
+		<button id="air_con_button" type="button" onclick ="toggle('air_con')" class="Selection" >Air Con</button>
+		<button id="mood_light_button" type="button" onclick ="toggle('mood_light')" class="Selection" >Mood Lighting</button>
+		<button id="custom_input_button" type="button" onclick ="toggle('custom_input')" class="Selection" >Custom Input</button>
+		<button id="feedback_button" type="button" onclick ="toggle('feedback')" class="Selection" >Feedback</button>
 
 
-      <p id="AC_status" class="Section">Air Conditioner</p>
+		<div id="air_con_panel" class="panel">
+		
+			<p id="AC_status" class="Section">Air Conditioner</p>
+		
+			<form action="" id="ac_on_off">
+			<button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle" style="width:150px">ON/OFF</button>
+		  </form>
+		
+			<form action="" id="ac_timer">
+				<select name="timer" size="1" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
+				  <option value="" selected>Set Timer(min)</option>
+				  <option value="2[t0]">Reset</option>
+				  <option value="2[t3]">3</option>
+				  <option value="2[t4]">4</option>
+				  <option value="2[t5]">5</option>
+				  <option value="2[t7]">7</option>
+				  <option value="2[t10]">10</option>
+				</select>
+			</form>
+		
+			<form action="" id="ac_fan">
+				<select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
+				  <option value="" selected>Set Fan Speed</option>
+				  <option value="2[f1]">1</option>
+				  <option value="2[f2]">2</option>
+				  <option value="2[f3]">3</option>
+				  <option value="2[f4]">Auto</option>
+				</select>
+			</form>
+		
+		</div>
 
-      <form action="" id="ac_on_off">
-    <button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="Toggle">ON/OFF</button>
-  </form>
+		<div id="mood_light_panel" class="panel">
+			<p id='mood_light_status' class="Section">Mood Lighting</p>
+			<table><tr><td>			
+				<form action="" id="light_on_off">
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style="width:100px">ON</button>
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style="width:100px">OFF</button>
+		  		</form>
+		
+			  	<form action="" id="light_random_fade">
+					<button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle" style="width:200px">RANDOM</button>
+		  		</form>
+			</td><td>
+				<div class="yui-skin-sam">
+					<div id="light_color_picker" class="light_color_picker"> 
+					<!--Color Picker will appear here--> 
+					</div>
+				</div>
+			</td></tr></table>  
+		</div>
+			
+		<div id="custom_input_panel" class="panel">
+		
+			<p class="Section">Custom Input</p>
 
-      <form action="" id="ac_timer">
-    <select name="timer" size="1" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
-          <option value="" selected>Set Timer(min)</option>
-          <option value="2[t0]">Reset</option>
-          <option value="2[t3]">3</option>
-          <option value="2[t4]">4</option>
-          <option value="2[t5]">5</option>
-          <option value="2[t7]">7</option>
-          <option value="2[t10]">10</option>
-        </select>
-  </form>
+			<form action="" name="customInput">
+				<input type="text" name="msg"/>
+				<button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
+			</form>
+			
+		</div>
+  
+	</center>
 
-      <form action="" id="ac_fan">
-    <select name="fan" class="Selector" onChange="sendCmd(this.options[this.selectedIndex].value)">
-          <option value="" selected>Set Fan Speed</option>
-          <option value="2[f1]">1</option>
-          <option value="2[f2]">2</option>
-          <option value="2[f3]">3</option>
-          <option value="2[f4]">Auto</option>
-        </select>
-  </form>
-
-
-      <br>
-      <hr width="30%">
-
-      <p id='mood_light_status' class="Section">Mood Lighting</p>
-
-      <form action="" id="light_on_off">
-    <button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="Toggle" style="width:18%">ON</button>
-    <button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="Toggle" style="width:18%">OFF</button>
-  </form>
-
-      <form action="" id="light_random_fade">
-    <button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="Toggle">Random Color</button>
-  </form>
-
-      <div id="light_color_picker"> 
-    <!--Color Picker will appear here--> 
-  </div>
-
-
-      <hr width="30%">
-      <br>
-
-
-      <form action="" name="customInput">
-    Custom Input:
-    <input type="text" name="msg">
-    <button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
-  </form>
-
-</center>
-
-<p id='ws_response'></p>
+	<div id="feedback_panel" style="display: none">
+		<p id='ws_response'></p>
+	</div>
 
 </body>
 </html>
