@@ -10,7 +10,7 @@
 	<!-- Color Picker source files for CSS and JavaScript -->
 	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js"></script>	
 	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js"></script>
-	<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.9.0/build/colorpicker/assets/skins/sam/colorpicker.css"></script>
+	<link rel="stylesheet" type="text/css" href="../assets/colorpicker.css"></script>
 	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js"></script>
 
 	<!-- Color Picker handling, also throttle color change requests. -->
@@ -26,7 +26,7 @@
 	
 	<script type="text/javascript">
 		$(document).ready(function() {	
-			checkWebSockets();
+			checkWebSockets(true);
 			checkPasswordCookie()
 			checkButtonCookies(Array("air_con", "mood_light", "custom_input", "feedback"));
 			});
@@ -111,7 +111,7 @@
 	</center>
 
 	<div id="feedback_panel" style="display: none">
-		<p id='ws_response'></p>
+		<p id='feedback'></p>
 	</div>
 
 </body>

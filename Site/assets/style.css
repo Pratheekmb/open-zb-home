@@ -48,7 +48,7 @@ text-shadow: 1px 1px 3px rgba(200,200,0, 0.5);
 	font-size: large;
 	color: #CCC;
 }
-.ws_response {
+.feedback {
 	height:auto;
 	border: 2px solid #a0a0a0;
 	-moz-border-radius: 10px;
@@ -58,11 +58,17 @@ text-shadow: 1px 1px 3px rgba(200,200,0, 0.5);
 }
 .light_color_picker {
 	position: relative;
-	padding: 6px;
-	background-color: #eeeeee;
-	width: 420px;
-	height:220px;
-	border: 2px solid #a0a0a0;
-	-moz-border-radius: 10px;
-	-webkit-border-radius: 10px;
+	left:20px;
+	width: 290px;
+	height:190px;
+	-moz-box-shadow: 0 0 10px 5px #888;
+	-webkit-box-shadow: 0 0 10px 5px #888;
+	box-shadow: 0 0 10px 5px #888;
+	-webkit-transition: color .2s;
+	border-radius: .4	em;
+	background-image: url('../assets/colorpicker_bg.gif');
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
 }
+
+

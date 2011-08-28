@@ -1,14 +1,14 @@
 var using_ws = false;
 
-function checkWebSockets()
+function checkWebSockets(use_ws)
 {
 
-	if ("WebSocket" in window) {
+	if (use_ws && ("WebSocket" in window)) {
 	
-		document.getElementById('ws_response').innerHTML = '\
+		document.getElementById('feedback').innerHTML = '\
 		<div id="conn_status">Not Connected</div>\
 		<h4 id="error" style="color:#ff0000"></h4>\
-		<div id="console" class="ws_response"></div> ';
+		<div id="console" class="feedback"></div> ';
 
 		ws = new WebSocket("wss://" +  document.location.hostname + ":8881/ws");
 		ws.onmessage = function(evt) {                
@@ -28,17 +28,17 @@ function checkWebSockets()
 		}
 		
 		ws.onopen = function(evt) {
-			$('#conn_status').html('<b>Connected</b>');
-			ws.send(document.getElementById('password').value);
-			ws.send('[p]');
+			$('#conn_status').html('<b style="color:#006000">Connected</b><button type="button" onclick ="ws.close()">Disconnect</button>');
+			ws.send(document.getElementById('password').value); /*Authenticate */
+			ws.send('[p]');	/* 'ping' request. Online modules should declare presence */
 			using_ws = true;
 		}
 		ws.onerror = function(evt) {
 			$('#conn_status').html('<b>Error</b>');
 		}
 		ws.onclose = function(evt) {
-			$('#conn_status').html('<b>Disconnected - Using AJAX!</b> <button type="button" onclick ="checkWebSockets()">Re-connect</button>');
-
+			checkWebSockets(false);
+			
 			document.getElementById('AC_status').innerHTML=
 				'Air Conditioner'
 					
@@ -50,7 +50,13 @@ function checkWebSockets()
 	}
 
 	else { // no websocket support
-		$('error').innerHTML = "Your browser does not appear to support WebSockets";
+		using_ws = false;
+		document.getElementById('feedback').innerHTML = '\
+		<div id="conn_status"><b style="color:#550000">Using AJAX</b></div>\
+		<div id="console" class="feedback"></div> ';
+
+ 		if ("WebSocket" in window) 
+			$('#conn_status').html('<b style="color:#550000">Using AJAX</b> <button type="button" onclick ="checkWebSockets(true)">Re-connect</button>');
 	}		
 }
 
@@ -70,14 +76,15 @@ function sendCmd(str) {
 		  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
 		  }
 		  
-		/*xmlhttp.onreadystatechange=function()
-		//  {
+		xmlhttp.onreadystatechange=function()
+		  {
 		  if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
-			document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+				document.getElementById('console').innerHTML = ">> "+xmlhttp.responseText+"<br>" + 
+													document.getElementById('console').innerHTML;
 			}
 		  }
-		  */
+		  
 		  
 		xmlhttp.open("POST","https://" +  document.location.hostname + ":8880/form",true);
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
