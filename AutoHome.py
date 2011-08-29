@@ -195,6 +195,26 @@ SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 ################################################################################
 ################################################################################
+import os, sys
+
+if os.geteuid() == 0:
+	
+	class FlashSocketPolicy(Protocol):
+		""" A simple Flash socket policy server.
+		See: http://www.adobe.com/devnet/flashplayer/articles/socket_policy_files.html
+		"""
+		def connectionMade(self):
+			policy = '<?xml version="1.0"?><!DOCTYPE cross-domain-policy SYSTEM ' \
+					 '"http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">' \
+					 '<cross-domain-policy><allow-access-from domain="*" to-ports="*" /></cross-domain-policy>'
+			self.transport.write(policy)
+			self.transport.loseConnection()
+	factory = Factory()
+	factory.protocol = FlashSocketPolicy
+	reactor.listenTCP(843, factory)
+	print "Flash policy on on TCP port: 843"
+else:
+	print "To enable flsh policy, run as root."
 
 
 # Start reactor:

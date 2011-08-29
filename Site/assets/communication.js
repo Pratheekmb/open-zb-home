@@ -2,6 +2,7 @@ var using_ws = false;
 
 function checkWebSockets(use_ws)
 {
+    WEB_SOCKET_SWF_LOCATION = "../assets/flash_ws/WebSocketMain.swf";
 
 	if (use_ws && ("WebSocket" in window)) {
 	
@@ -83,9 +84,7 @@ function sendCmd(str) {
 				document.getElementById('console').innerHTML = ">> "+xmlhttp.responseText+"<br>" + 
 													document.getElementById('console').innerHTML;
 			}
-		  }
-		  
-		  
+		  }	  		  
 		xmlhttp.open("POST","https://" +  document.location.hostname + ":8880/form",true);
 		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
 		xmlhttp.send("pass=" + encodeURIComponent(document.getElementById('password').value) 
