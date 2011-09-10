@@ -23,7 +23,9 @@ from AutoHomeConf import * #the file with all your settings.
 TCPClients = []
 WebSockClients=[]
 ser = serial.Serial(ZB_PORT, ZB_SPEED)
-xbee = ZigBee(ser) 
+xbee = ZigBee(ser)
+timer = None
+delimiter = None
 
 ################################################################################
 # Dispatch addressed commands to zigbee devices, after making sure frame starts correctly.
@@ -113,11 +115,23 @@ print "TCP socket listening on port: ", TCP_PORT
 ################################################################################
 class FormPage(Resource):
 
+	def dispatch(self, data):
+		dispatchZB(data)
+
 	def render_POST(self, request):
 		if  ('pass' in request.args) & ('cmd' in request.args):
 			if cgi.escape(request.args["pass"][0]) == WEBSITE_PASSWORD:
 				print "Authenticated ",
-				dispatchZB(cgi.escape(request.args["cmd"][0]))
+				data = cgi.escape(request.args["cmd"][0])
+				#Handle a delayed request. ie, t180*4[l1] will send the command [l1] to device 4 in 2 minutes.
+				if data[0] == 't':
+					delimiter= data.find("*")
+					if 1 < delimiter < data.find("["):
+						if int(data[1:delimiter]):
+							timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])
+
+				else:
+					self.dispatch(data)
 				return '<html><body>Submitted</body></html>'
 			else:
 				print "Wrong password in POST request"
@@ -145,15 +159,25 @@ class WSHandler(WebSocketHandler):
 		WebSocketHandler.__init__(self, transport)
 		self.authenticated = False;
 
-	def frameReceived(self, frame):
+	def dispatch(self, data):
+		dispatchZB(data)
+
+	def frameReceived(self, data):
 		if not self.authenticated:
-			if frame==WEBSITE_PASSWORD:
+			if data==WEBSITE_PASSWORD:
 				self.authenticated=True
 				WebSockClients.append(self)
 				print "Authenticated"
 		else:
-			dispatchZB(frame);
-		
+			#Handle a delayed request. ie, t180*4[l1] will send the command [l1] to device 4 in 2 minutes.
+			if data[0] == 't':
+				if 1 < delimiter < data.find("["):
+					if int(data[1:delimiter]):
+						timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])
+
+			else:
+				self.dispatch(data)
+	
 	def connectionMade(self):
 		print 'Connected to client..',
 
@@ -185,6 +209,10 @@ class XbeeReader:
 		response = xbeePacketDictionary
 		print response
 		if response ["id"]=="rx":
+			if response["rf_data"]=="AT":
+				xbee.send('tx', dest_addr_long= response["source_addr_long"], dest_addr='\xFF\xFE', frame_id='\x01', data="OK")
+
+		
 			broadcastToClients(response["rf_data"])
 			return response["rf_data"]
 			

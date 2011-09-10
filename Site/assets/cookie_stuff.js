@@ -24,6 +24,14 @@ function checkButtonCookies(myArray) {
 	}
 }
 
+function checkSelectorCookies(myArray) {                 
+	for (var i = 0; i < myArray.length; i++) {
+		if (getCookie(myArray[i])) {
+			document.getElementById(myArray[i]).value=getCookie(myArray[i]);
+		}
+	}
+}
+
 function checkPasswordCookie() {
 	var password=getCookie("password");
 	if (password!=null && password!=""){

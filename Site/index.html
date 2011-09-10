@@ -16,67 +16,140 @@
 	<!-- Color Picker handling, also throttle color change requests. -->
     <script type="text/javascript" src="../assets/color_picker.js"></script>
 
-	<!-- Websocket and AJAX functions (communication)-->
-	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	<!-- Websocket and AJAX functions, AirCon command functions (communication)-->
 	<script type="text/javascript" src="../assets/communication.js" ></script>
 
 	<!-- Cookies: Password hash cookie and panel status open/close toggle and cookies-->
 	<script type="text/javascript" src="../assets/webtoolkit_md5.js" ></script>
 	<script type="text/javascript" src="../assets/cookie_stuff.js" ></script>
-	
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+
 	<script type="text/javascript">
 		$(document).ready(function() {	
 			checkWebSockets(true);
 			checkPasswordCookie()
-			checkButtonCookies(Array("air_con", "mood_light", "custom_input", "feedback"));
+			checkButtonCookies(Array("air_con", "mood_light", "custom_input", "feedback", "settings", "temp_frequency"));
+			checkSelectorCookies(Array("AC_temperature", "AC_fan_speed", "AC_timer"));
 			});
 	</script>
-	
+
 </head>
 	
 <body>
 	
 	<input type="hidden" id="password"/>
-	<button type="button" onclick ="setPassword()">Set Pass</button>
 
 	<center>
 		<button id="air_con_button" type="button" onclick ="toggle('air_con')" class="panelSelector" >Air Con</button>
 		<button id="mood_light_button" type="button" onclick ="toggle('mood_light')" class="panelSelector" >Mood Lighting</button>
 		<button id="custom_input_button" type="button" onclick ="toggle('custom_input')" class="panelSelector" >Custom Input</button>
 		<button id="feedback_button" type="button" onclick ="toggle('feedback')" class="panelSelector" >Feedback</button>
+		<img  src="http://www.sponsorbaglantimerkezi.com/theme/grb/icons/settings.png" onclick ="setPassword()" legth="10px" height="10px" >
+
+		
 
 		<div id="air_con_panel" class="panel">
 		
 			<p id="AC_status" class="sectionHeader">Air Conditioner</p>
-		
-			<form action="" id="ac_on_off">
-			<button type="button" onclick ="sendCmd(this.value)" value ="2[o]" class="toggleButton" style="width:150px">ON/OFF</button>
-		  </form>
-		
-			<form action="" id="ac_timer">
-				<select name="timer" size="1" class="selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
-				  <option value="" selected>Set Timer(min)</option>
-				  <option value="2[t0]">Reset</option>
-				  <option value="2[t3]">3</option>
-				  <option value="2[t4]">4</option>
-				  <option value="2[t5]">5</option>
-				  <option value="2[t7]">7</option>
-				  <option value="2[t10]">10</option>
-				</select>
-			</form>
-		
-			<form action="" id="ac_fan">
-				<select name="fan" class="selector" onChange="sendCmd(this.options[this.selectedIndex].value); this.selectedIndex=0;">
-				  <option value="" selected>Set Fan Speed</option>
-				  <option value="2[f1]">1</option>
-				  <option value="2[f2]">2</option>
-				  <option value="2[f3]">3</option>
-				  <option value="2[f4]">Auto</option>
-				</select>
-			</form>
-		
-		</div>
+			<div id="temperature_display_panel" class="panel">
+				<table>
+					<tr>
+						<td>
+							<div id="room_temp" class="sectionHeader"></div>
+						</td>
+						<td>
+							<!--button id="temp_frequency_button" type="button" onclick ="toggle('temp_frequency')" class="panelSelector" style="font-size: xx-small">Frequency</button-->
+						</td>
+						<td>
+							<div id="temp_frequency_panel" class="panel" style="position:absolute">
+								<select  size="1"  onChange="sendCmd('2[t' +this.options[this.selectedIndex].value +']'); toggle('temp_frequency')">
+									<option value="0">Stop</option>
+									<option value="10">1 sec</option>
+									<option value="100">10 sec</option>
+									<option value="600">1 min</option>
+									<option value="6000">10 min</option>
+								</select>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			
+			<br>
+			
+			<!--button type="button" onclick ="setACTimer()" value ="" class="toggleButton">TIMER</button-->		
+			<img src="http://www.iconarchive.com/icons/mazenl77/I-like-buttons-3a/128/Cute-Ball-Time-icon.png" onclick ="setACTimer()"> 
 
+	
+			<!--button type="button" onclick ="ACTogglePower()" value ="" class="toggleButton">POWER</button-->
+			<img src="http://icons.iconarchive.com/icons/mazenl77/I-like-buttons-3a/128/Cute-Ball-Standby-icon.png" onclick ="ACTogglePower()"> 
+
+			<!--button id="settings_button" type="button" onclick ="toggle('settings')" class="panelSelector" style="font-size: xx-small">Settings</button-->
+			<img src="http://www.sponsorbaglantimerkezi.com/theme/grb/icons/settings.png" onclick ="toggle('settings')" length="16px" height="16px">
+
+
+			<div id="settings_panel" class="panel">
+				<table>
+					<tr>
+						<td rowspan="3">
+							<button type="button" onclick ="ACChangeSettings()" value ="" class="toggleButton">SET</button>
+						</td>
+						<td>FAN:</td>
+						<td>
+							<center><div>
+								<select id="AC_fan_speed" size="1"  onChange="setCookie('AC_fan_speed',this.value,365)">
+									<option value="1">LOW</option>
+									<option value="2">MED</option>
+									<option value="3">HIGH</option>
+									<option value="4">AUTO</option>
+								</select>
+							</center></div>
+						</td>
+					</tr>
+					<tr>
+						<td>TEMP:</td>
+						<td>
+							<center><div>
+								<select id="AC_temperature" size="1" onChange="setCookie('AC_temperature',this.value,365)">
+									<option value="16">16</option>
+									<option value="17">17</option>
+									<option value="18">18</option>
+									<option value="19">19</option>
+									<option value="20">20</option>
+									<option value="21">21</option>
+									<option value="22">22</option>
+									<option value="23">23</option>
+									<option value="24">24</option>
+									<option value="25">25</option>
+									<option value="26">26</option>
+									<option value="27">27</option>
+									<option value="28">28</option>
+									<option value="29">29</option>
+									<option value="30">30</option>
+								</select></div>
+							</center>
+						</td>
+					</tr>
+					<tr>
+						<td>Timer (min):</td>
+						<td>
+							<center><div>
+								<select id="AC_timer" size="1" onChange="setCookie('AC_timer',this.value,365)">
+								  <option value="0" selected>Reset</option>
+								  <option value="3">3</option>
+								  <option value="4">4</option>
+								  <option value="5">5</option>
+								  <option value="7">7</option>
+								  <option value="10">10</option>
+								</select></div>
+							</center>
+						</td>
+					</tr>
+				</table>	
+			</div>
+		</div>
+		
 		<div id="mood_light_panel" class="panel">
 			<p id='mood_light_status' class="sectionHeader">Mood Lighting</p>
 			<table><tr><td>			

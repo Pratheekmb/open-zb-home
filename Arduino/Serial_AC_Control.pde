@@ -3,48 +3,65 @@
 
 unsigned int c = 0;
 
-//IR sequence to toggle A/C power.
-unsigned int ac_toggle_code[] = {
-  3150,3700,2000,800,1050,1800,1950,850,1050,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,1800,1950,850,1050,850,1000,850,1050,850,1050,850,1000,900,1000,850,1050,850,1000,850,1050,850,1000,1800,1950,1800,1050,850,1050,850,1950,1800,1950,850,1050,850,1050,850,1050,850,1000,850,1050,1800,1950,850,2950};
-unsigned int fan_01_code[] = {
-  3150,2800,1050,850,1050,850,1000,1800,1950,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,850,1050,800,1050,1800,1950,850,1050,850,1050,850,1050,800,1050,850,1050,850,1000,850,1050,850,1050,1800,1950,1750,1050,900,1000,850,1950,1800,1050,850,1950,850,1050,850,1050,850,1050,850,1000,850,1050,1800,1950,850,3000};
-
-unsigned int fan_02_code[] = {
-  3100,2750,1050,900,1000,850,1050,1800,1950,1750,2000,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,1800,1950,850,1050,850,1000,900,1000,850,1050,850,1000,850,1050,850,1050,850,1000,1800,1950,1800,1050,850,1050,850,1950,1800,1050,850,1950,850,1050,850,1000,850,1050,850,1050,800,1050,1800,2000,800,3000};
-
-unsigned int fan_03_code[] = {
-  3100,2850,1000,850,1050,850,1000,1800,1050,850,1950,850,1050,850,1050,850,1000,900,1000,850,1050,850,1000,850,1050,850,1050,1800,1950,850,1050,850,1000,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,1800,1950,1800,1050,850,1050,850,1950,1750,1100,850,1950,850,1050,850,1000,850,1050,850,1050,850,1000,1800,1950,850,3000};
-
-unsigned int fan_04_code[] = {
-  3150,2800,1000,900,1000,850,1050,1750,1050,850,1050,850,1950,850,1050,850,1050,850,1000,850,1050,850,1050,850,1000,850,1050,1800,1950,850,1050,850,1050,850,1000,850,1050,850,1050,800,1050,850,1050,850,1000,1800,1950,1800,1050,850,1050,850,1950,1800,1050,850,1950,850,1050,850,1050,850,1000,850,1050,850,1000,1800,1950,850,3000};
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#define ONE_WIRE_BUS 2
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
 
 
 IRsend irsend;
 
 
-unsigned long timer_start_time = millis();
-int timer_status = 0;
-unsigned int timer_duration=0;
-char buff[128];
-int count;
-int timerval;
-unsigned long now;
+
+
+char buff[128]; //receive incoming commands via UART.
+int count;      //count the length of incoming commands
+
+String temp_start = "Temperature (AC Module): ";
+size_t temp_start_size = temp_start.length();
+char temp[30]; //for the convrsion of the temperature float.
+unsigned long last_reading = 0;
+unsigned long now = 0;
+unsigned long interval;
+int cyclic_read = 0;  
 
 
 void setup()
 {
+  char byte1, byte2;
+
   Serial.begin(57600);
-  delay(2000);
+
+  sensors.begin();
+  
+  /* Send AT continually untill OK received. unlikely? but depending on timing, hangle KO too */
+  while(true){
+    Serial.print("AT");  
+    delay(100);
+    if(Serial.available()>1){
+      byte1=Serial.read();
+      byte2=Serial.read();
+      if ((byte1=='O' || byte1=='K') && (byte2=='O' || byte2=='K')){
+        Serial.flush();
+        break;
+      }
+    }
+    delay(500);
+  }
   Serial.println("AC IR MODULE ONLINE");
+  getTemp();
 }
 
 
 
 void loop()
 {
-  IRTimerCheck();
-
-  //The following block parses serial in for bits between '[' and ']', ignored everything else. 
+ 
+/*
+ *The following block parses serial in for bits between '[' and ']', ignored everything else.
+ *The contents are passed on to be processed by parse(..). 
+ */
   if(Serial.available()>0){
     if(Serial.read()=='[') {          // wait for frame start char.
       now = millis();
@@ -53,7 +70,7 @@ void loop()
         if (Serial.available()>0){
           buff[count]=Serial.read();  // store frame in the global buffer.
           if (buff[count]==']') {     // untill frame end char.
-            buff[count] = '\0';
+            buff[count] = 0;
             break;
           } 
           count++;
@@ -61,97 +78,120 @@ void loop()
       } 
       parse(buff, count);
     }
-  }    
+  }
+
+  if (cyclic_read && ( (millis() -  last_reading) > interval) ){
+    getTemp(); 
+  }
+
 }
 
 
 /*
  * Parse commands, eg:
- * "o" sends ON/OFF
- * "t3" sets timer for 3 minutes
- * "f1" sets fan speed to 1.
+ * "p" sends 'ping'
+ * "C" sends implicit command for IR.  
+ * "t" gets single temperature reading. "t1" sets interval to 100ms. "t0" stops cyclic temp reading.
  */
 void parse(char* buff, int count) {
 
   switch (buff[0]) {
   case 'p':
     Serial.println("AC IR MODULE ONLINE");
+    getTemp();
     break;
-  case 'o':
-    sendIR();
-    timer_status=0; // Override timer.
+  case 'C':
+    Serial.print("Sent implicit IR code:");
+    Serial.println(&buff[1]);
+    sendIRCode(&buff[1]); 
     break;
   case 't':
-    Serial.print("Timer set for (min):");
-    Serial.println(atoi(&buff[1]), DEC);
-    IRTimerSet(atoi(&buff[1])); 
-    break;
-  case 'f':
     switch (buff[1]) {
-    case '1':
-      Serial.println("Fan set to 1"); 
-      sendIRCode(&fan_01_code[0], sizeof(fan_01_code)/sizeof(int)); 
+    case 0:      //no time specified (end of cmd string), single reading.
+      getTemp();
       break;
-    case '2':
-      Serial.println("Fan set to 2"); 
-      sendIRCode(&fan_02_code[0], sizeof(fan_02_code)/sizeof(int)); 
+    default:
+      interval = atoi(&buff[1]);
+      if (interval) {
+        getTemp();
+        cyclic_read = 1;
+        interval=100*interval; 
+      } 
+      else {
+        cyclic_read = 0; 
+      }
       break;
-    case '3':
-      Serial.println("Fan set to 3"); 
-      sendIRCode(&fan_03_code[0], sizeof(fan_03_code)/sizeof(int)); 
-      break;
-    case 'A':
-      Serial.println("Fan set to Auto"); 
-      sendIRCode(&fan_04_code[0], sizeof(fan_04_code)/sizeof(int)); 
-      break;
-    case 'o':
-      sendIR();
-      timer_status=0; // Override timer.
-      break;
-    default:  
-      break;
-    }          
+    }
+    break;
   default:  
     break;
   }
 }
 
+void getTemp() {
+  float reading;
 
+  for (int attempts=10; attempts!=0; attempts--){
+    sensors.setWaitForConversion(false);  // makes it async
+    sensors.requestTemperatures();
+    sensors.setWaitForConversion(true);
+    delay(94);
+    reading=sensors.getTempCByIndex(0);
+    //Attempt to get a non error or startup values. 
+    if ((int)(reading*1000)==0 || reading == 85.00 || (int)reading == -127) {
+      continue;
+      delay(100); 
+    }
+    else {
+      dtostrf(sensors.getTempCByIndex(0), 3, 2, temp);  //convert float to char array in temp
+      Serial.println(temp_start.substring(0,temp_start_size).concat(String(temp)));
+      delay(3);  //allow time for xbee to packetize. 
+      last_reading=millis();
+      return;
+    }
+  }
+    Serial.println(temp_start.substring(0,temp_start_size).concat(String("ERROR")));
+    return;  
+}
 
-void IRTimerSet (unsigned int mins) {
-  timer_duration=mins;
-  if (mins==0){
-    timer_status=false;
-  } 
-  else {
-    if (!timer_status)  sendIR(); //If timer is off, turn AC on otherwise just extend timer.
-    timer_status=true;
-    timer_start_time = millis();
+/*
+ * I've found that my AC sends commands in 2 main ways, repeating the main code 3 times.
+ * for a power toggling command (in my ASCII format): mzCOMMANDkzCOMMANDkzCOMMAND~
+ * for a non p toggling command (in my ASCII format): miCOMMANDkiCOMMANDkiCOMMAND~
+ * Therefor, I just send either zCOMMAND or iCOMMAND and this takes care of the repeating
+ * Also note that the command itself may differ, refer to the communication.js
+ */
+void sendIRCode (char* code) {
+
+  irsend.enableIROut(38);
+
+  code[-1]='m';                  //this is OK cause it used to be '[' from the frame.
+  sendMyRaw(&code[-1]);
+  code[-1]='k';
+  sendMyRaw(&code[-1]);
+  code[-1]='k';
+  sendMyRaw(&code[-1]);
+  sendMyRaw("~");
+  irsend.space(0); // Just to be sure
+
+  delayMicroseconds(4000);
+}
+
+/*
+ * This is a modified version of IRremote libraries sendRaw. Instead of receiving a 
+ * buffer of delay times, it receives ASCII chars. See my modified raw decoder for the other
+ * side of this (how to encode into ASCII string)
+ */
+void sendMyRaw(char buf[])
+{
+  for (int i = 0; buf[i]!=0; i++) {
+    if (i & 1) {
+      irsend.space(((byte)buf[i]-48)*50);    
+    } 
+    else {
+      irsend.mark(((byte)buf[i]-48)*50);
+    }
   }
 }
 
-
-void IRTimerCheck (void) {
-  if (timer_status && ((millis()-timer_start_time)>((unsigned long)timer_duration*1000*60))){
-    sendIR();
-    timer_status=0; 
-  }
-}
-
-
-void sendIR (void) {
-  //Send IR code in 3 repeat bursts to increase transfer chance.
-  irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
-  irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
-  irsend.sendRaw(ac_toggle_code, sizeof(ac_toggle_code)/sizeof(int), 38);
-  Serial.println("ON/OFF SENT");
-}
-
-void sendIRCode (unsigned int* code, int code_size) {
-  //Send IR code in 3 repeat bursts to increase transfer chance.
-  irsend.sendRaw(code,code_size, 38);
-  irsend.sendRaw(code,code_size, 38);
-  irsend.sendRaw(code,code_size, 38);
-
-}
 

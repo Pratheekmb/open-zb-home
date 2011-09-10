@@ -12,19 +12,7 @@ function checkWebSockets(use_ws)
 
 		ws = new WebSocket("wss://" +  document.location.hostname + ":8881/ws");
 		ws.onmessage = function(evt) {                
-			document.getElementById('console').innerHTML = ">> "+evt.data+"<br>" + 
-			document.getElementById('console').innerHTML;
-			
-			if (evt.data.match("AC IR MODULE ONLINE")) {
-				document.getElementById('AC_status').innerHTML=
-					'Air Conditioner <span class="panelStatus">ONLINE</span>'
-			}
-			
-			if (evt.data.match("RGB & TEMP MODULE ONLINE")) {
-				document.getElementById('mood_light_status').innerHTML=
-					'Mood Light <p class="panelStatus">ONLINE</p>'
-			}
-			
+			parseResponse(evt.data);
 		}
 		
 		ws.onopen = function(evt) {
@@ -62,33 +50,160 @@ function checkWebSockets(use_ws)
 
 	
 function sendCmd(str) {
+var debug = false;
 
-	if (using_ws != false) {
-		ws.send(str)
-	} else {
-		var xmlhttp;
-		if (window.XMLHttpRequest)
-		  {// code for IE7+, Firefox, Chrome, Opera, Safari
-		  xmlhttp=new XMLHttpRequest();
-		  }
-		else
-		  {// code for IE6, IE5
-		  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
-		  }
-		  
-		xmlhttp.onreadystatechange=function()
-		  {
-		  if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-				document.getElementById('console').innerHTML = ">> "+xmlhttp.responseText+"<br>" + 
-													document.getElementById('console').innerHTML;
-			}
-		  }
-		  
-		  
-		xmlhttp.open("POST","https://" +  document.location.hostname + ":8880/form",true);
-		xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-		xmlhttp.send("pass=" + encodeURIComponent(document.getElementById('password').value) 
-					+"&cmd="+encodeURIComponent(str));
+	if(!debug) {
+		if (using_ws != false) {
+			ws.send(str)
+		} else {
+			var xmlhttp;
+			if (window.XMLHttpRequest)
+			  {// code for IE7+, Firefox, Chrome, Opera, Safari
+			  xmlhttp=new XMLHttpRequest();
+			  }
+			else
+			  {// code for IE6, IE5
+			  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+			  }
+			  
+			xmlhttp.onreadystatechange=function()
+			  {
+			  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+				{
+					parseResponse(xmlhttp.responseText);
+
+				}
+			  }
+			  
+			  
+			xmlhttp.open("POST","https://" +  document.location.hostname + ":8880/form",true);
+			xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+			xmlhttp.send("pass=" + encodeURIComponent(document.getElementById('password').value) 
+						+"&cmd="+encodeURIComponent(str));
+		}
 	}
+	else {
+	
+						document.getElementById('console').innerHTML = "DEBUG: "+str+"<br>" + 
+														document.getElementById('console').innerHTML;
+	
+	}
+}
+
+function parseResponse(response) {			
+	//dont display temperature in feedback, just update it.
+ 	if (response.indexOf("Temperature (AC Module): ") > 0) {
+		document.getElementById('room_temp').innerHTML=
+			'<span onclick ="toggle('+"'temp_frequency'"+' )">TEMP: <span class="panelStatus" >'+ response.substring(response.indexOf("Temperature (AC Module): ")+25 )+'</span>&degc</span>';
+	document.getElementById("temperature_display_panel").style.display = "block";
+	} else{
+	
+	document.getElementById('console').innerHTML = ">> "+response+"<br>" + 
+										document.getElementById('console').innerHTML;											
+	
+	if (response.match("RGB & TEMP MODULE ONLINE")) {
+		document.getElementById('mood_light_status').innerHTML=
+			'Mood Light <span class="panelStatus">ONLINE</p>'
+	}
+	
+	if (response.match("AC IR MODULE ONLINE")) {
+		document.getElementById('AC_status').innerHTML=
+			'Air Conditioner <span class="panelStatus">ONLINE</p>'
+	}
+	
+	}
+}
+
+
+var temperature = {
+    16 : 'CCCCCCCWWC',
+    17 : 'CCCCCWWCCC',
+    18 : 'CCCCCWCCWC',
+    19:  'CCCWWCCCCC',
+    20:  'CCCWWWWC',
+    21:  'CCCWCCWCCC',
+    22:  'CCCWCCCCWC',
+    23:  'CWWCCCCCCC',
+    24:  'CWWCCWWC',
+    25:  'CWWWWCCC',
+    26:  'CWWWCCWC',
+    27:  'CWCCWCCCCC',
+    28:  'CWCCWWWC',
+    29:  'CWCCCCWCCC',
+    30:  'CWCCCCCCWC',
+};
+
+var fan_cold = {
+	1: "WCCCCC",
+	2: "WWWC",
+	3: "CCWCCC",
+	4: "CCCCWC"
+};
+
+var fan_hot = {
+	1: "WCCCCCC",
+	2: "WCCWW",
+	3: "WWWCC",
+	4: "WWCCW"
+};
+function setACTimer() 
+{
+
+	/*if HOT:
+	
+	POWER = zWW   + FAN(hot)+ CCCCCCC + TEMP + END
+	
+	else 
+		+ fan[document.getElementById('AC_fan_speed').value]
+		+ 'CCCCCC'
+		+ temperature[document.getElementById('AC_temperature').value]
+		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+		+ ']'); 
+	*/
+	
+		
+	sendCmd('2[Cz'+'WCCW'
+		+ fan_cold[document.getElementById('AC_fan_speed').value]
+		+ 'CCCCCC'
+		+ temperature[document.getElementById('AC_temperature').value]
+		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+		+ ']');
+		
+		
+	sendCmd('t' + (parseInt(document.getElementById('AC_timer').value)*60).toString() + '*' 
+		+ '2[Cz'+'WCCW'
+		+ fan_cold[document.getElementById('AC_fan_speed').value]
+		+ 'CCCCCC'
+		+ temperature[document.getElementById('AC_temperature').value]
+		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+		+ ']');
+		
+}
+
+
+
+function ACTogglePower()
+{	
+	sendCmd('2[Cz'+'WCCW'
+		+ fan_cold[document.getElementById('AC_fan_speed').value]
+		+ 'CCCCCC'
+		+ temperature[document.getElementById('AC_temperature').value]
+		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+		+ ']');
+}
+
+function ACChangeSettings()
+{
+	/*
+	if HOT:
+	TOGGL = iCCCW + FAN(hot)+ CCCCCCC +TEMP + END
+	else:
+	*/
+
+	sendCmd('2[CiCCCCCW'
+			+ fan_cold[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']');
 }
