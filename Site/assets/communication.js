@@ -207,3 +207,14 @@ function ACChangeSettings()
 			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
 			+ ']');
 }
+
+function sendATCommand(id)
+{
+	sendCmd(document.getElementById('commandDestination').value 
+			+'(02:'
+			+ id 
+			+':'
+			+ document.getElementById(id).value+')');
+}
+
+

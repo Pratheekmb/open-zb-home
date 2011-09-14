@@ -26,12 +26,32 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
 
 	<script type="text/javascript">
-		$(document).ready(function() {	
+		$(document).ready(function() {
+		
+			var remembered_selectors = Array(
+				"AC_temperature",
+				"AC_fan_speed",
+				"AC_timer",
+				"commandDestination",
+				"Digital0",
+				"Digital1",
+				"Digital2"
+				);
+			
+			var remembered_panels = Array(
+				"air_con",
+				"mood_light",
+				"custom_input",
+				"feedback", "settings",
+				"temp_frequency"
+				);		
+		
+		
 			checkWebSockets(true);
-			checkPasswordCookie()
-			checkButtonCookies(Array("air_con", "mood_light", "custom_input", "feedback", "settings", "temp_frequency"));
-			checkSelectorCookies(Array("AC_temperature", "AC_fan_speed", "AC_timer"));
-			});
+			checkPasswordCookie();
+			checkButtonCookies(remembered_panels);
+			checkSelectorCookies(remembered_selectors);	
+		});
 	</script>
 
 </head>
@@ -46,7 +66,6 @@
 		<button id="custom_input_button" type="button" onclick ="toggle('custom_input')" class="panelSelector" >Custom Input</button>
 		<button id="feedback_button" type="button" onclick ="toggle('feedback')" class="panelSelector" >Feedback</button>
 		<img  src="http://www.sponsorbaglantimerkezi.com/theme/grb/icons/settings.png" onclick ="setPassword()" legth="10px" height="10px" >
-
 		
 
 		<div id="air_con_panel" class="panel">
@@ -98,7 +117,7 @@
 						<td>FAN:</td>
 						<td>
 							<center><div>
-								<select id="AC_fan_speed" size="1"  onChange="setCookie('AC_fan_speed',this.value,365)">
+								<select id="AC_fan_speed" size="1"  onChange="setCookie(this.id,this.value,365)">
 									<option value="1">LOW</option>
 									<option value="2">MED</option>
 									<option value="3">HIGH</option>
@@ -111,7 +130,7 @@
 						<td>TEMP:</td>
 						<td>
 							<center><div>
-								<select id="AC_temperature" size="1" onChange="setCookie('AC_temperature',this.value,365)">
+								<select id="AC_temperature" size="1" onChange="setCookie(this.id,this.value,365)">
 									<option value="16">16</option>
 									<option value="17">17</option>
 									<option value="18">18</option>
@@ -135,7 +154,7 @@
 						<td>Timer (min):</td>
 						<td>
 							<center><div>
-								<select id="AC_timer" size="1" onChange="setCookie('AC_timer',this.value,365)">
+								<select id="AC_timer" size="1" onChange="setCookie(this.id,this.value,365)">
 								  <option value="0" selected>Reset</option>
 								  <option value="3">3</option>
 								  <option value="4">4</option>
@@ -173,11 +192,114 @@
 		<div id="custom_input_panel" class="panel">
 		
 			<p class="sectionHeader">Custom Input</p>
+				Custom CMD:
+				<input type="text" id="customInput"/>
+				<button type="button" onclick ="sendCmd(document.getElementById('customInput').value)" >Send</button>
+			
+			<table>
+	<tr>
+		<td rowspan = "20">
+			<select id="commandDestination" onChange="setCookie(this.id ,this.value,365)">
+				<option value="">Broadcast</option>
+				<option value="1">1</option>
+				<option value="2">AC</option>
+				<option value="3">3</option>
+				<option value="4">Mood Light</option>
+			</select>
+		</td>		
+		<td>Digital0:</td><td>
+			<select  id="D0" name="D0" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="02">ADC</option>
+				<option value="03">DI</option>
+				<option value="04">OUT LOW</option>
+				<option value="05">OUT HIGH</option>
+			</select>
+		</td><td><button id="D0" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	<tr>
+		<td>Digital1:</td><td>
+			<select  id="D1" name="D1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="02">ADC</option>
+				<option value="03">DI</option>
+				<option value="04">OUT LOW</option>
+				<option value="05">OUT HIGH</option>
+			</select>
+		</td><td><button id="D1" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	<!--********* Duplicate between here (typical) *****-->
+	<!--********* just add id to *************-->
+	<tr>
+		<td>Digital1:</td><td>
+			<select  id="D2" name="D2" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="02">ADC</option>
+				<option value="03">DI</option>
+				<option value="04">OUT LOW</option>
+				<option value="05">OUT HIGH</option>
+			</select>
+		</td><td><button id="D2" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	<!--**************** and here *********************-->
+	<tr>
+		<td>Sleep Mode:</td><td>
+			<select  id="SM" name="SM" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">No Sleep</option>
+				<option value="01">Pin Hibernate</option>
+				<option value="02">Pin Doze</option>
+				<option value="04">Cycling Sleep</option>
+				<option value="05">C.S w/ Pin W.U</option>
+			</select>
+		</td><td><button id="SM" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	<tr>
+		<td>Power Level:</td><td>
+			<select  id="PL" name="PL" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">-10 dDm</option>
+				<option value="01">-d bBm</option>
+				<option value="02">-4 dBm</option>
+				<option value="03">-2 dBm</option>
+				<option value="04">0 dBm</option>
+			</select>
+		</td><td><button id="PL" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>	
+	<tr>
+		<td>PWM0:</td><td>
+			<select  id="P0" name="P0" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="01">RSSI</option>
+				<option value="02">PWM0</option>
+			</select>
+		</td><td><button id="P0" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	<tr>
+		<td>PWM0 Value:</td><td>
+				<input type="text" id="M0" name="M0"/>
+		</td><td><button id="M0" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+		<td>PWM1:</td><td>
+			<select  id="P1" name="P1" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="01">RSSI</option>
+				<option value="02">PWM1</option>
+			</select>
+		</td><td><button id="P1" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>	
+	<td>PWM1 Value:</td><td>
+				<input type="text" id="M1" name="M1"/>
+		</td><td><button id="M1" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
+	
+	<tr>
+		<td>RO:</td><td>
+				<input type="text" id="RO" name="RO"/>
+		</td><td><button id="RO" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>
 
-			<form action="" name="customInput">
-				<input type="text" name="msg"/>
-				<button type="button" onclick ="sendCmd(document.customInput.msg.value)"  >Send</button>
-			</form>
+
+</table>
+
 			
 		</div>
   

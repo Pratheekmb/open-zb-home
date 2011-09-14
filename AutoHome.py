@@ -37,22 +37,41 @@ delimiter = None
 def dispatchZB(data):
 	if len(data) > 2:
 
-		index=1
+		index=0
 		frame_id='\x01'
 		dest_addr = ZB["BC"]
+		type=None;
 
 		print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), " CMD: ", data,
 
 		# First, make sure frame starts correctly and determin the addressing scheme to use:
-		if data[0] == '[':			#No address specified: broadcast.
+		if data[0] == '[':				#No address specified: broadcast.
 			index=0
+			type="tx";
+		elif data[0] == '(':			#No address specified: broadcast.
+			index=0
+			type="at";
+			
+			
 		elif data[0] in ZB:			#Valid Address Specified.
 			dest_addr=ZB[data[0]]
 			if data[1:3] == '![':	#No ack transmit to specific address.
 				index=2
 				frame_id='\x00'
+				type="tx";
+			elif data[1:3] == '!(':	#No ack transmit to specific address.
+				index=2
+				frame_id='\x00'
+				type="at";
+				
+				
 			elif data[1] == '[':
-				pass
+				type="tx"
+
+			elif data[1] == '(':
+				type="at"
+				index=1
+				
 			else:
 				print "INVALID START OF FRAME"
 				return
@@ -61,9 +80,19 @@ def dispatchZB(data):
 			return
 			
 		# Also, make sure frame ends correctly, only then send, otherwise just return.	
-		if data[-1] == ']':
+		if (type=="tx" and data[-1] == ']'):
 			xbee.send('tx', dest_addr_long=dest_addr, dest_addr='\xFF\xFE', frame_id=frame_id, data=data[index:])
 			print "SENT"
+		elif (type=="at" and data[-1]==')'):
+			parts= data[index+1:-1].split(":")
+			if len(parts) !=3:
+				print "BAD COMMAND"
+				return
+			option = parts[0]
+			command = parts[1]
+			parameter = parts[2] 
+			print parts
+			xbee.send('remote_at', frame_id='A',dest_addr_long=dest_addr ,dest_addr='\xFF\xFE',options=option.decode('hex'),command=command,parameter=parameter.decode('hex'))
 		else:
 			print "INVALID END OF FRAME"
 
@@ -171,9 +200,12 @@ class WSHandler(WebSocketHandler):
 		else:
 			#Handle a delayed request. ie, t180*4[l1] will send the command [l1] to device 4 in 2 minutes.
 			if data[0] == 't':
+				delimiter= data.find("*")
 				if 1 < delimiter < data.find("["):
 					if int(data[1:delimiter]):
 						timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])
+						
+
 
 			else:
 				self.dispatch(data)
@@ -223,6 +255,8 @@ SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 ################################################################################
 ################################################################################
+
+
 
 
 # Start reactor:
