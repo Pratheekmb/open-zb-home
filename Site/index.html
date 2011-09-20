@@ -112,7 +112,7 @@
 				<table>
 					<tr>
 						<td rowspan="3">
-							<button type="button" onclick ="ACChangeSettings()" value ="" class="toggleButton">SET</button>
+							<img src ="http://icons.iconarchive.com/icons/jackietran/rounded/32/Play-Blue-icon.png"  onclick ="ACChangeSettings()">
 						</td>
 						<td>FAN:</td>
 						<td>
@@ -172,14 +172,11 @@
 		<div id="mood_light_panel" class="panel">
 			<p id='mood_light_status' class="sectionHeader">Mood Lighting</p>
 			<table><tr><td>			
-				<form action="" id="light_on_off">
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[l1]" class="toggleButton" style="width:100px">ON</button>
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[l0]" class="toggleButton" style="width:100px">OFF</button>
-		  		</form>
-		
-			  	<form action="" id="light_random_fade">
-					<button type="button" onclick ="sendCmd(this.value)" value ="4[f]" class="toggleButton" style="width:200px">RANDOM</button>
-		  		</form>
+		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Green-icon.png" onclick ="sendCmd(4[l1])"> 
+				<br>
+		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Orange-icon.png" onclick ="sendCmd(4[l0])"> 
+				<br>
+				<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Loading-icon.png" onclick ="sendCmd(4[f])"> 
 			</td><td>
 				<div class="yui-skin-sam">
 					<div id="light_color_picker" class="light_color_picker"> 
