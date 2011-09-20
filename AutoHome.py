@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from twisted.internet import reactor, threads
+from twisted.internet import reactor, threads, task
 from twisted.internet.protocol import Protocol, Factory, defer
 from twisted.web import static
 from twisted.web.server import Site
@@ -8,10 +8,11 @@ from twisted.web.resource import Resource
 
 from websocket import WebSocketHandler, WebSocketSite
 
-import serial
-from xbee import ZigBee, XBee
+from xbeeService.protocol import ZigBeeProtocol
+from twisted.internet.serialport import SerialPort
 
 from time import strftime
+
 import cgi
 
 ################################################################################
@@ -22,81 +23,136 @@ from AutoHomeConf import * #the file with all your settings.
 
 TCPClients = []
 WebSockClients=[]
-ser = serial.Serial(ZB_PORT, ZB_SPEED)
-xbee = ZigBee(ser)
+xbee=[]
 timer = None
 delimiter = None
 
+
+
 ################################################################################
-# Dispatch addressed commands to zigbee devices, after making sure frame starts correctly.
+# Handle XBEE I/O
+################################################################################
+################################################################################
+# Dispatch addressed commands to zigbee ZB, after making sure frame starts correctly.
 # eg: data = "2[f1]" will transmit "[f1]" to specific device
 # eg: data = "2![f1]" will transmit "[f1]" to specific device without ack on zibee layer.
 # eg: data = "[x]"   will broadcast [x]
 # note there are no acks on zibee layer during broadcast so ">[" is not valid anyway
 ################################################################################
-def dispatchZB(data):
-	if len(data) > 2:
+	
+class ZBHandler(ZigBeeProtocol):
+	def __init__(self, *args, **kwds):
+		super(ZBHandler, self).__init__(*args, **kwds)
+		xbee.append(self)
 
-		index=0
-		frame_id='\x01'
-		dest_addr = ZB["BC"]
-		type=None;
 
-		print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), " CMD: ", data,
+	def handle_packet(self, xbeePacketDictionary):
+		response = xbeePacketDictionary
 
-		# First, make sure frame starts correctly and determin the addressing scheme to use:
-		if data[0] == '[':				#No address specified: broadcast.
-			index=0
-			type="tx";
-		elif data[0] == '(':			#No address specified: broadcast.
-			index=0
-			type="at";
 			
+		if response.get("source_addr_long", "default") in ZB_reverse:
+			if response["id"] == "rx":
+				# Silently respond "OK" to AT calls (when module starts up).
+				if response["rf_data"]=="AT":
+					reactor.callFromThread(self.send,
+								 "tx",
+								 frame_id="\x01",
+								 dest_addr_long=response["source_addr_long"],
+								 dest_addr="\xff\xfe",
+								 data="OK")
+				else:
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:",\
+					ZB_reverse[response["source_addr_long"]],\
+					"DATA: ", response["rf_data"],
+					
+					broadcastToClients(response["rf_data"])
+
+			elif response["id"] == 'remote_at_response':
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:",\
+					ZB_reverse[response["source_addr_long"]],\
+					" CMD:", response["command"],\
+					" STATUS:", response["status"].encode('hex')
+
+			else:
+				print response
 			
-		elif data[0] in ZB:			#Valid Address Specified.
-			dest_addr=ZB[data[0]]
-			if data[1:3] == '![':	#No ack transmit to specific address.
-				index=2
-				frame_id='\x00'
+
+	def dispatchZB(self, data):
+		if len(data) > 2:
+	
+			index=0
+			frame_id='\x01'
+			dest_addr = ZB["BC"]
+			type=None;
+	
+			print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), ">>>  ", data,
+	
+			# First, make sure frame starts correctly and determin the addressing scheme to use:
+			if data[0] == '[':				#No address specified: broadcast.
+				index=0
 				type="tx";
-			elif data[1:3] == '!(':	#No ack transmit to specific address.
-				index=2
-				frame_id='\x00'
+			elif data[0] == '(':			#No address specified: broadcast.
+				index=0
 				type="at";
 				
 				
-			elif data[1] == '[':
-				type="tx"
-
-			elif data[1] == '(':
-				type="at"
-				index=1
-				
+			elif data[0] in ZB:			#Valid Address Specified.
+				dest_addr=ZB[data[0]]
+				if data[1:3] == '![':	#No ack transmit to specific address.
+					index=2
+					frame_id='\x00'
+					type="tx";
+				elif data[1:3] == '!(':	#No ack transmit to specific address.
+					index=2
+					frame_id='\x00'
+					type="at";
+					
+					
+				elif data[1] == '[':
+					type="tx"
+	
+				elif data[1] == '(':
+					type="at"
+					index=1
+					
+				else:
+					print "INVALID START OF FRAME"
+					return
 			else:
-				print "INVALID START OF FRAME"
+				print "INVALID ADDRESS"
 				return
-		else:
-			print "INVALID ADDRESS"
-			return
-			
-		# Also, make sure frame ends correctly, only then send, otherwise just return.	
-		if (type=="tx" and data[-1] == ']'):
-			xbee.send('tx', dest_addr_long=dest_addr, dest_addr='\xFF\xFE', frame_id=frame_id, data=data[index:])
-			print "SENT"
-		elif (type=="at" and data[-1]==')'):
-			parts= data[index+1:-1].split(":")
-			if len(parts) !=3:
-				print "BAD COMMAND"
-				return
-			option = parts[0]
-			command = parts[1]
-			parameter = parts[2] 
-			print parts
-			xbee.send('remote_at', frame_id='A',dest_addr_long=dest_addr ,dest_addr='\xFF\xFE',options=option.decode('hex'),command=command,parameter=parameter.decode('hex'))
-		else:
-			print "INVALID END OF FRAME"
+				
+			# Also, make sure frame ends correctly, only then send, otherwise just return.	
+			if (type=="tx" and data[-1] == ']'):	
+				reactor.callFromThread(self.send,
+										'tx',
+										dest_addr_long=dest_addr,
+										dest_addr='\xFF\xFE',
+										frame_id=frame_id,
+										data=data[index:])
+				print ""
+			elif (type=="at" and data[-1]==')'):
+				parts= data[index+1:-1].split(":")
+				if len(parts) !=3:
+					print "BAD COMMAND"
+					return
+				option = parts[0]
+				command = parts[1]
+				parameter = parts[2] 
+				print "[Option = ", option, ", Command = ", command, ", Parameter = ", parameter, "]" 
+				reactor.callFromThread(self.send,
+										'remote_at',
+										frame_id='A',
+										dest_addr_long=dest_addr,
+										dest_addr='\xFF\xFE',
+										options=option.decode('hex'),
+										command=command,
+										parameter=parameter.decode('hex'))
+			else:
+				print "INVALID END OF FRAME"
 
-	return
+s = SerialPort(ZBHandler(escaped=False), ZB_PORT, reactor, ZB_SPEED)
+
 
 ################################################################################
 # Send data to all TCP + Websocket clients.
@@ -145,7 +201,8 @@ print "TCP socket listening on port: ", TCP_PORT
 class FormPage(Resource):
 
 	def dispatch(self, data):
-		dispatchZB(data)
+		for x in xbee:
+			x.dispatchZB(data)
 
 	def render_POST(self, request):
 		if  ('pass' in request.args) & ('cmd' in request.args):
@@ -189,7 +246,8 @@ class WSHandler(WebSocketHandler):
 		self.authenticated = False;
 
 	def dispatch(self, data):
-		dispatchZB(data)
+		for x in xbee:
+			x.dispatchZB(data)
 
 	def frameReceived(self, data):
 		if not self.authenticated:
@@ -225,39 +283,13 @@ site.addHandler('/ws', WSHandler)
 reactor.listenSSL(WEBSOCKET_PORT, site, ssl.DefaultOpenSSLContextFactory(SSL_PRIVKEY, SSL_CERT,))
 print "Web socket listening on port: ", WEBSOCKET_PORT
 
-################################################################################
-# Handle reading from XBEE. 
-################################################################################
-from xbeeService import *
 
-class XbeeReader:
-	def decodeFloat(self, var):
-		text = ""
-		for i in range(0, len(var)):
-			text += var[i]
-		return unpack('f', text)[0]
-
-	def handle_packet(self, xbeePacketDictionary):
-		response = xbeePacketDictionary
-		print response
-		if response ["id"]=="rx":
-			if response["rf_data"]=="AT":
-				xbee.send('tx', dest_addr_long= response["source_addr_long"], dest_addr='\xFF\xFE', frame_id='\x01', data="OK")
-
-		
-			broadcastToClients(response["rf_data"])
-			return response["rf_data"]
-			
-class XbeeTest(ZigBeeProtocol, XbeeReader):
-	pass
-			
-SerialPort(XbeeTest(), ZB_PORT, reactor, ZB_SPEED)
 
 ################################################################################
 ################################################################################
 
 
+if __name__ == '__main__':
 
-
-# Start reactor:
-reactor.run()
+	# Start reactor:
+	reactor.run()

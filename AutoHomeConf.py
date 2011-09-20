@@ -23,6 +23,18 @@ ZB={
         "BC":'\x00\x00\x00\x00\x00\x00\xFF\xFF'
 }
 
+#ZB_reverse = dict((ZB[i],i) for i in ZB)
+
+ZB_reverse={
+        ZB["1"]:'M1',
+        ZB["2"]:'AC',
+        ZB["3"]:'M2',
+        ZB["4"]:'ML',
+        ZB["BC"]:'BC'
+}
+
+
+
 ############################
 # To create key and certificate:
 # openssl genrsa > privkey.pem
