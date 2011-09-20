@@ -1,17 +1,12 @@
 from xbee.zigbee import ZigBee
 from xbee.base import XBeeBase
 from xbee.frame import APIFrame
-from twisted.internet.serialport import SerialPort
 
-from twisted.protocols import basic
+from twisted.protocols.basic import LineReceiver
 
-class ZigBeeProtocol(ZigBee, basic.LineReceiver):
-	def __init__(self, shorthand=True, escaped=True):
-		super(XBeeBase, self).__init__()
-		self.shorthand = shorthand
-		self._thread_continue = False
+class ZigBeeProtocol(LineReceiver, ZigBee):
+	def __init__(self, escaped=True):
 		self._escaped = escaped
-		
 		self.frame = APIFrame(escaped=self._escaped)
 		
 		self.setRawMode()
@@ -29,3 +24,7 @@ class ZigBeeProtocol(ZigBee, basic.LineReceiver):
 			except ValueError:
 				# Bad frame, so restart
 				self.frame = APIFrame(escaped=self._escaped)
+
+	def _write(self, data):
+		frame = APIFrame(data, self._escaped).output()
+		self.transport.write(frame)
