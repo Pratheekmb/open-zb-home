@@ -8,10 +8,12 @@
 	<link href="../assets/style.css" rel="stylesheet" type="text/css"/>
 
 	<!-- Color Picker source files for CSS and JavaScript -->
-	<script src="http://yui.yahooapis.com/2.9.0/build/utilities/utilities.js"></script>	
-	<script src="http://yui.yahooapis.com/2.9.0/build/slider/slider-min.js"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/yui/2.9.0/build/utilities/utilities.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/yui/2.9.0/build/slider/slider-min.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/yui/2.9.0/build/colorpicker/colorpicker-min.js"></script>
+
+
 	<link rel="stylesheet" type="text/css" href="../assets/colorpicker.css"></script>
-	<script src="http://yui.yahooapis.com/2.9.0/build/colorpicker/colorpicker-min.js"></script>
 
 	<!-- Color Picker handling, also throttle color change requests. -->
     <script type="text/javascript" src="../assets/color_picker.js"></script>
@@ -172,11 +174,11 @@
 		<div id="mood_light_panel" class="panel">
 			<p id='mood_light_status' class="sectionHeader">Mood Lighting</p>
 			<table><tr><td>			
-		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Green-icon.png" onclick ="sendCmd(4[l1])"> 
+		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Green-icon.png" onclick ="sendCmd('4[l1]')"> 
 				<br>
-		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Orange-icon.png" onclick ="sendCmd(4[l0])"> 
+		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Orange-icon.png" onclick ="sendCmd('4[l0]')"> 
 				<br>
-				<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Loading-icon.png" onclick ="sendCmd(4[f])"> 
+				<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Loading-icon.png" onclick ="sendCmd('4[f]')"> 
 			</td><td>
 				<div class="yui-skin-sam">
 					<div id="light_color_picker" class="light_color_picker"> 
