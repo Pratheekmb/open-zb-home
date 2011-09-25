@@ -28,6 +28,25 @@ void setup()
   pinMode(LEDB, OUTPUT);
   pinMode(LIGHTPIN, OUTPUT);
 
+
+  /* Send AT continually untill OK received. unlikely? but depending on timing, hangle KO too */
+  char byte1, byte2;
+  while(true){
+    Serial.print("AT");  
+    delay(100);
+    if(Serial.available()>1){
+      byte1=Serial.read();
+      byte2=Serial.read();
+      if ((byte1=='O' || byte1=='K') && (byte2=='O' || byte2=='K')){
+        Serial.flush();
+        break;
+      }
+    }
+    delay(500);
+  }
+  delay(100);
+  Serial.println("RGB & TEMP MODULE ONLINE");
+  
 }
 
 void loop() {
@@ -55,6 +74,9 @@ void loop() {
 void parse(char* buff, int count) {
 
   switch (buff[0]) {
+  case 'p':
+    Serial.println("RGB & TEMP MODULE ONLINE");
+    break;
   case 'c':
     if (count==7) {
       setLed(&buff[1]);
@@ -119,12 +141,3 @@ char hexToDec(char a, char b) {
   }
   return a*16+b;
 }
-
-
-
-
-
-
-
-
-
