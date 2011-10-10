@@ -83,19 +83,39 @@ var debug = false;
 		}
 	}
 	else {
-	
-						document.getElementById('console').innerHTML = "DEBUG: "+str+"<br>" + 
-														document.getElementById('console').innerHTML;
-	
+		document.getElementById('console').innerHTML = "DEBUG: "+str+"<br>" + 
+								document.getElementById('console').innerHTML;
 	}
 }
 
-function parseResponse(response) {			
+
+function parseSamples(module,obj){
+	document.getElementById(module + "_samples").innerHTML = "";
+	for (var key in obj) {
+		document.getElementById(module + "_samples").innerHTML = 
+						document.getElementById(module + "_samples").innerHTML
+						+"<p id='"+module+"_"+key+"'>"+ key + " : " +obj[key]+"</p>";
+	}
+}
+
+
+function parseResponse(response) {	
+
+	var modSize = response.indexOf(" SAMPLE >>")
+	if (modSize>0) {
+			var module = response.substring(0,modSize);
+			var obj = $.parseJSON(response.substring(modSize+10));
+			parseSamples(module,obj);
+	}
+	
+	
 	//dont display temperature in feedback, just update it.
- 	if (response.indexOf("Temperature (AC Module): ") > 0) {
+ 	else if (response.indexOf("Temperature (AC Module): ") > 0) {
 		document.getElementById('room_temp').innerHTML=
-			'<span onclick ="toggle('+"'temp_frequency'"+' )">TEMP: <span class="panelStatus" >'+ response.substring(response.indexOf("Temperature (AC Module): ")+25 )+'</span>&degc</span>';
-	document.getElementById("temperature_display_panel").style.display = "block";
+			'<span onclick ="toggle('+"'temp_frequency'"+' )">TEMP: <span class="panelStatus" >'
+			+ response.substring(response.indexOf("Temperature (AC Module): ")+25 )
+			+'</span>&degc</span>';
+		document.getElementById("temperature_display_panel").style.display = "block";
 	} else{
 	
 	document.getElementById('console').innerHTML = ">> "+response+"<br>" + 

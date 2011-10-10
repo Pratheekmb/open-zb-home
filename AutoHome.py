@@ -61,17 +61,34 @@ class ZBHandler(ZigBeeProtocol):
 								 dest_addr="\xff\xfe",
 								 data="OK")
 				else:
-					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:",\
-					ZB_reverse[response["source_addr_long"]],\
-					"DATA: ", response["rf_data"],
+					response = ZB_reverse[response["source_addr_long"]]  + " DATA >> " \
+								+ response["rf_data"]
 					
-					broadcastToClients(response["rf_data"])
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:",response
+
+					broadcastToClients(response)
 
 			elif response["id"] == 'remote_at_response':
-					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:",\
-					ZB_reverse[response["source_addr_long"]],\
-					" CMD:", response["command"],\
-					" STATUS:", response["status"].encode('hex')
+
+					response = ZB_reverse[response["source_addr_long"]]  + " CMD >> " \
+								+ str(response["command"])\
+								+ " STATUS: " + str(response["status"].encode('hex'))
+
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:", response
+
+					broadcastToClients(response)
+
+			elif response["id"] == 'rx_io_data_long_addr':
+			
+					# remove '-' in samples dict, eg: dio-0 > dio0 conforms with javascript scheme.
+					response = str( ZB_reverse[response["source_addr_long"]]  + " SAMPLE >> " \
+								 + str(dict((str(key).replace('-',''), str(value)) \
+								 		for (key, value) in response["samples"][0].items())) \
+								 ).replace("'",'"')
+					
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:", response
+					
+					broadcastToClients(response)
 
 			else:
 				print response
@@ -157,7 +174,7 @@ s = SerialPort(ZBHandler(escaped=False), ZB_PORT, reactor, ZB_SPEED)
 ################################################################################
 # Send data to all TCP + Websocket clients.
 ################################################################################
-def broadcastToClients(data, source=None, timestamp=True):
+def broadcastToClients(data, source=None, timestamp=False):
 
 	if timestamp:
 		data = strftime("%Y-%m-%d %H:%M:%S").encode('utf8') + ": " + data

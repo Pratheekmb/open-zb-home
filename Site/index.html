@@ -4,6 +4,11 @@
 	
 	<title>MowHome Automation Center</title>
 	
+	
+	
+	<script src="http://yui.yahooapis.com/2.9.0/build/yahoo/yahoo-min.js"></script>
+	<script src="http://yui.yahooapis.com/2.9.0/build/json/json-min.js"></script>	
+	
 	<!-- Page styling - CSS -->
 	<link href="../assets/style.css" rel="stylesheet" type="text/css"/>
 
@@ -23,9 +28,12 @@
 
 	<!-- Cookies: Password hash cookie and panel status open/close toggle and cookies-->
 	<script type="text/javascript" src="../assets/webtoolkit_md5.js" ></script>
-	<script type="text/javascript" src="../assets/cookie_stuff.js" ></script>
+	<script src="../assets/cookie_stuff.js" ></script>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+	
+
+
 
 	<script type="text/javascript">
 		$(document).ready(function() {
@@ -71,6 +79,8 @@
 		
 
 		<div id="air_con_panel" class="panel">
+		<div id="AC_samples"></div>
+
 		
 			<p id="AC_status" class="sectionHeader">Air Conditioner</p>
 			<div id="temperature_display_panel" class="panel">
@@ -173,6 +183,7 @@
 		
 		<div id="mood_light_panel" class="panel">
 			<p id='mood_light_status' class="sectionHeader">Mood Lighting</p>
+			<div id="ML_samples"></div>
 			<table><tr><td>			
 		  		<img src="http://icons.iconarchive.com/icons/jackietran/rounded/32/Power-Button-Green-icon.png" onclick ="sendCmd('4[l1]')"> 
 				<br>
@@ -230,7 +241,7 @@
 	<!--********* Duplicate between here (typical) *****-->
 	<!--********* just add id to *************-->
 	<tr>
-		<td>Digital1:</td><td>
+		<td>Digital2:</td><td>
 			<select  id="D2" name="D2" size="1" onChange="setCookie(this.id ,this.value,365)">
 				<option value="00">Disabled</option>
 				<option value="02">ADC</option>
@@ -241,6 +252,23 @@
 		</td><td><button id="D2" onclick ="sendATCommand(this.id)">Send</button></td>
 	</tr>
 	<!--**************** and here *********************-->
+	<tr>
+		<td>Digital3:</td><td>
+			<select  id="D3" name="D3" size="1" onChange="setCookie(this.id ,this.value,365)">
+				<option value="00">Disabled</option>
+				<option value="02">ADC</option>
+				<option value="03">DI</option>
+				<option value="04">OUT LOW</option>
+				<option value="05">OUT HIGH</option>
+			</select>
+		</td><td><button id="D3" onclick ="sendATCommand(this.id)">Send</button></td>
+	</tr>	
+	<tr>
+		<td>Sample Rate:</td><td>
+				<input type="text" id="IR" name="IR"/>
+		</td><td><button id="IR" onclick ="sendATCommand(this.id)">Send</button></td>
+		<td>32-FFFF or 0</td>
+	</tr>	
 	<tr>
 		<td>Sleep Mode:</td><td>
 			<select  id="SM" name="SM" size="1" onChange="setCookie(this.id ,this.value,365)">
