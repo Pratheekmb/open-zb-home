@@ -90,12 +90,20 @@ var debug = false;
 
 
 function parseSamples(module,obj){
-	document.getElementById(module + "_samples").innerHTML = "";
+	document.getElementById(module + "_samples").innerHTML = module;
 	for (var key in obj) {
 		document.getElementById(module + "_samples").innerHTML = 
 						document.getElementById(module + "_samples").innerHTML
 						+"<p id='"+module+"_"+key+"'>"+ key + " : " +obj[key]+"</p>";
 	}
+			
+	//Perform specific manipulation here as you wish..
+	if (module == "ML") {
+		if (obj.adc0 != "undefined") {
+			//XBee's ADC voltage is val*1200/1024. divided by 10 for LM35 temperature.
+			document.getElementById(module+"_adc0").innerHTML = (parseInt(obj.adc0)*0.11718).toFixed(2) + "&degc";
+		}
+	}	
 }
 
 
@@ -107,8 +115,7 @@ function parseResponse(response) {
 			var obj = $.parseJSON(response.substring(modSize+10));
 			parseSamples(module,obj);
 	}
-	
-	
+
 	//dont display temperature in feedback, just update it.
  	else if (response.indexOf("Temperature (AC Module): ") > 0) {
 		document.getElementById('room_temp').innerHTML=
