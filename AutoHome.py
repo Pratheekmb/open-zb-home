@@ -68,17 +68,7 @@ class ZBHandler(ZigBeeProtocol):
 
 					broadcastToClients(response)
 
-			elif response["id"] == 'remote_at_response':
-
-					response = ZB_reverse[response["source_addr_long"]]  + " CMD >> " \
-								+ str(response["command"])\
-								+ " STATUS: " + str(response["status"].encode('hex'))
-
-					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:", response
-
-					broadcastToClients(response)
-
-			elif response["id"] == 'rx_io_data_long_addr':
+			elif 'samples' in response:
 			
 					# remove '-' in samples dict, eg: dio-0 > dio0 conforms with javascript scheme.
 					response = str( ZB_reverse[response["source_addr_long"]]  + " SAMPLE >> " \
@@ -88,6 +78,16 @@ class ZBHandler(ZigBeeProtocol):
 					
 					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:", response
 					
+					broadcastToClients(response)
+
+			elif response["id"] == 'remote_at_response':
+
+					response = ZB_reverse[response["source_addr_long"]]  + " CMD >> " \
+								+ str(response["command"])\
+								+ " STATUS: " + str(response["status"].encode('hex'))
+
+					print strftime("%Y-%m-%d %H:%M:%S").encode('utf8'), "<<< FROM:", response
+
 					broadcastToClients(response)
 
 			else:
