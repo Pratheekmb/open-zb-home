@@ -259,9 +259,10 @@ class WebSocketRequest(Request):
         version = self._getOneHeader("Sec-WebSocket-Version")
         # we only speak version 8 of the protocol
         if version != "8":
-            self.setResponseCode(426, "Upgrade Required")
-            self.setHeader("Sec-WebSocket-Version", "8")
-            return self.finish()
+            print "client connecting to websocket with version:", version, "8 oficially supported. restriction over-rided"
+            #self.setResponseCode(426, "Upgrade Required")
+            #self.setHeader("Sec-WebSocket-Version", "8")
+            #return self.finish()
 
         key = self._getOneHeader("Sec-WebSocket-Key")
         if not key:

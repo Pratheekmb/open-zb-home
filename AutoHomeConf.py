@@ -9,7 +9,7 @@ WEBSITE_ROOT = "/Users/ruzz/open-zb-home/Site"
 WEBSITE_PORT = 8880
 WEBSOCKET_PORT = 8881
 
-ZB_PORT = '/dev/tty.usbserial-A800czWn'
+ZB_PORT = '/dev/tty.SLAB_USBtoUART'
 ZB_SPEED = 57600
 
 #Change with values shown on the back of your XBee Modules.

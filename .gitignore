@@ -1,2 +1,5 @@
 privkey.pem
 cacert.pem
+*/*.pyc
+*.pycxbeeService/__init__.pyc
+xbeeService/protocol.pyc

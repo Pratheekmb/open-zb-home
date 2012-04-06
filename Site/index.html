@@ -37,6 +37,7 @@
 				"AC_temperature",
 				"AC_fan_speed",
 				"AC_timer",
+				"AC_mode",
 				"commandDestination",
 				"Digital0",
 				"Digital1",
@@ -122,7 +123,7 @@
 			<div id="settings_panel" class="panel">
 				<table>
 					<tr>
-						<td rowspan="3">
+						<td rowspan="4">
 							<img src ="http://icons.iconarchive.com/icons/jackietran/rounded/32/Play-Blue-icon.png"  onclick ="ACChangeSettings()">
 						</td>
 						<td>FAN:</td>
@@ -172,6 +173,17 @@
 								  <option value="5">5</option>
 								  <option value="7">7</option>
 								  <option value="10">10</option>
+								</select></div>
+							</center>
+						</td>
+					</tr>
+					<tr>
+						<td>Mode:</td>
+						<td>
+							<center><div>
+								<select id="AC_mode" size="1" onChange="setCookie(this.id,this.value,365)">
+								  <option value="HOT" selected>Heating</option>
+								  <option value="COLD">Cooling</option>
 								</select></div>
 							</center>
 						</td>

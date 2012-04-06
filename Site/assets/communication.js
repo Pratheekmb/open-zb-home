@@ -188,22 +188,25 @@ function setACTimer()
 		+ ']'); 
 	*/
 	
+	var cmd = '';
+	if (document.getElementById('AC_mode').value == "HOT") {
+		cmd = '2[CzWW'
+			+ fan_hot[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']';
+	} else {
+		cmd = '2[CzWCCW'
+			+ fan_cold[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']';
+	}
 		
-	sendCmd('2[Cz'+'WCCW'
-		+ fan_cold[document.getElementById('AC_fan_speed').value]
-		+ 'CCCCCC'
-		+ temperature[document.getElementById('AC_temperature').value]
-		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
-		+ ']');
-		
-		
-	sendCmd('t' + (parseInt(document.getElementById('AC_timer').value)*60).toString() + '*' 
-		+ '2[Cz'+'WCCW'
-		+ fan_cold[document.getElementById('AC_fan_speed').value]
-		+ 'CCCCCC'
-		+ temperature[document.getElementById('AC_temperature').value]
-		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
-		+ ']');
+	sendCmd(cmd);
+	sendCmd('t' + (parseInt(document.getElementById('AC_timer').value)*60).toString() + '*' + cmd);
 		
 }
 
@@ -211,12 +214,24 @@ function setACTimer()
 
 function ACTogglePower()
 {	
-	sendCmd('2[Cz'+'WCCW'
-		+ fan_cold[document.getElementById('AC_fan_speed').value]
-		+ 'CCCCCC'
-		+ temperature[document.getElementById('AC_temperature').value]
-		+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
-		+ ']');
+	var cmd = '';
+	if (document.getElementById('AC_mode').value == "HOT") {
+		cmd = '2[CzWW'
+			+ fan_hot[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']';
+	} else {
+		cmd = '2[CzWCCW'
+			+ fan_cold[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']';
+	}
+		
+	sendCmd(cmd);
 }
 
 function ACChangeSettings()
@@ -226,13 +241,26 @@ function ACChangeSettings()
 	TOGGL = iCCCW + FAN(hot)+ CCCCCCC +TEMP + END
 	else:
 	*/
-
-	sendCmd('2[CiCCCCCW'
+	
+	var cmd = '';
+	if (document.getElementById('AC_mode').value == "HOT") {
+	cmd = '2[CiCCCW'
+			+ fan_hot[document.getElementById('AC_fan_speed').value]
+			+ 'CCCCCCC'
+			+ temperature[document.getElementById('AC_temperature').value]
+			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
+			+ ']';
+	} else {
+		cmd = '2[CiCCCCCW'
 			+ fan_cold[document.getElementById('AC_fan_speed').value]
 			+ 'CCCCCC'
 			+ temperature[document.getElementById('AC_temperature').value]
 			+ 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCWWC'
-			+ ']');
+			+ ']';
+	}
+
+	sendCmd(cmd);
+
 }
 
 function sendATCommand(id)

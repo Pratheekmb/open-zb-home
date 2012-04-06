@@ -26,7 +26,7 @@ WebSockClients=[]
 xbee=[]
 timer = None
 delimiter = None
-
+timers={}
 
 
 ################################################################################
@@ -69,7 +69,6 @@ class ZBHandler(ZigBeeProtocol):
 					broadcastToClients(response)
 
 			elif 'samples' in response:
-			
 					# remove '-' in samples dict, eg: dio-0 > dio0 conforms with javascript scheme.
 					response = str( ZB_reverse[response["source_addr_long"]]  + " SAMPLE >> " \
 								 + str(dict((str(key).replace('-',''), str(value)) \
@@ -229,9 +228,10 @@ class FormPage(Resource):
 				#Handle a delayed request. ie, t180*4[l1] will send the command [l1] to device 4 in 2 minutes.
 				if data[0] == 't':
 					delimiter= data.find("*")
-					if 1 < delimiter < data.find("["):
+					if 1 <delimiter < data.find("[") -1:
 						if int(data[1:delimiter]):
-							timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])
+							timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])							
+							
 
 				else:
 					self.dispatch(data)
@@ -275,13 +275,23 @@ class WSHandler(WebSocketHandler):
 		else:
 			#Handle a delayed request. ie, t180*4[l1] will send the command [l1] to device 4 in 2 minutes.
 			if data[0] == 't':
-				delimiter= data.find("*")
-				if 1 < delimiter < data.find("["):
-					if int(data[1:delimiter]):
-						timer = reactor.callLater(int(data[1:delimiter]), self.dispatch, data[delimiter+1:])
-						
-
-
+				name=''
+				delimiter1 = data.find("*")
+				command=data[data.find("["):]
+				if delimiter1:
+					time=data[1:delimiter1]
+					delimiter2 = data.rfind("*",0,data.find("["))
+					if delimiter2:
+						name=data[delimiter1+1:delimiter2]
+				if time=='x':
+					try:
+						timers[name].cancel()
+						timers.pop(name)
+					except:
+						print "Failed to cancel timer " + name
+				else:
+					timers[name]=reactor.callLater(int(time), self.dispatch, command)
+				print timers
 			else:
 				self.dispatch(data)
 	
